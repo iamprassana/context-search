@@ -2,6 +2,8 @@
 
 ContextKeep is a personal knowledge library for saving notes, code snippets, webpages, PDFs, and images, then finding them again with global semantic and keyword search. It is built for people who collect useful information across projects and need more than browser bookmarks or folders to retrieve it.
 
+Working Link - https://context-search-ruby.vercel.app/
+
 ## What it does
 
 - Save notes, links, and code snippets; organize resources with collections, tags, favorites, and workspaces.
