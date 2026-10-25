@@ -45,12 +45,16 @@ export function LibraryDashboard({
   initialResources,
   initialCollections,
   userEmail,
+  userDisplayName,
+  userId,
   maxUploadSizeBytes,
   initialError,
 }: {
   initialResources: Resource[];
   initialCollections: string[];
   userEmail: string;
+  userDisplayName: string;
+  userId: string;
   maxUploadSizeBytes: number;
   initialError?: string;
 }) {
@@ -343,6 +347,9 @@ export function LibraryDashboard({
         activeView={activeView}
         collections={collections}
         resources={resources}
+        userEmail={userEmail}
+        userDisplayName={userDisplayName}
+        userId={userId}
         mobileOpen={mobileNavOpen}
         onNavigate={(view) => {
           setActiveView(view);
@@ -355,6 +362,8 @@ export function LibraryDashboard({
         <LibraryHeader
           activeView={activeView}
           userEmail={userEmail}
+          userDisplayName={userDisplayName}
+          userId={userId}
           addDisabled={Boolean(initialError)}
           query={query}
           onQueryChange={setQuery}

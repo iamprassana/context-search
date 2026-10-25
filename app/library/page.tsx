@@ -15,6 +15,8 @@ export default async function LibraryPage() {
         initialResources={[]}
         initialCollections={[]}
         userEmail=""
+        userDisplayName=""
+        userId=""
         maxUploadSizeBytes={maxUploadSizeBytes}
         initialError="Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY in .env.local, then apply the migration in supabase/migrations."
       />
@@ -31,6 +33,8 @@ export default async function LibraryPage() {
         initialResources={[]}
         initialCollections={[]}
         userEmail={user.email ?? ""}
+        userDisplayName={getUserDisplayName(user.user_metadata)}
+        userId={user.id}
         maxUploadSizeBytes={maxUploadSizeBytes}
         initialError={
           error instanceof Error
@@ -46,7 +50,17 @@ export default async function LibraryPage() {
       initialResources={library.resources}
       initialCollections={library.collections}
       userEmail={user.email ?? ""}
+      userDisplayName={getUserDisplayName(user.user_metadata)}
+      userId={user.id}
       maxUploadSizeBytes={maxUploadSizeBytes}
     />
   );
+}
+
+function getUserDisplayName(metadata: Record<string, unknown>): string {
+  for (const key of ["full_name", "name", "display_name"]) {
+    const value = metadata[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return "";
 }

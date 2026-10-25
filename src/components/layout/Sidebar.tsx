@@ -12,12 +12,16 @@ import {
   X,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import { UserAvatar } from "@/components/layout/UserAvatar";
 import type { LibraryView, Resource } from "@/types/resource";
 
 type SidebarProps = {
   activeView: LibraryView | string;
   collections: readonly string[];
   resources: Resource[];
+  userEmail: string;
+  userDisplayName: string;
+  userId: string;
   mobileOpen: boolean;
   onNavigate: (view: LibraryView | string) => void;
   onSearch: () => void;
@@ -28,6 +32,9 @@ export function Sidebar({
   activeView,
   collections,
   resources,
+  userEmail,
+  userDisplayName,
+  userId,
   mobileOpen,
   onNavigate,
   onSearch,
@@ -126,9 +133,14 @@ export function Sidebar({
             onClick={() => onNavigate("Settings")}
           />
           <div className="profile-row">
-            <span className="profile-avatar">AK</span>
+            <UserAvatar
+              className="profile-avatar"
+              email={userEmail}
+              displayName={userDisplayName}
+              userId={userId}
+            />
             <span className="profile-copy">
-              <strong>Alex Kim</strong>
+              <strong>{userDisplayName || userEmail || "User"}</strong>
               <small>Personal account</small>
             </span>
           </div>

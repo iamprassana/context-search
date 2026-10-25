@@ -3,10 +3,13 @@
 import { ChevronDown, Plus, Search } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { signOutAction } from "../../../app/actions/auth";
+import { UserAvatar } from "@/components/layout/UserAvatar";
 
 type LibraryHeaderProps = {
   activeView: string;
   userEmail: string;
+  userDisplayName: string;
+  userId: string;
   addDisabled?: boolean;
   query: string;
   onQueryChange: (query: string) => void;
@@ -16,6 +19,8 @@ type LibraryHeaderProps = {
 export function LibraryHeader({
   activeView,
   userEmail,
+  userDisplayName,
+  userId,
   addDisabled = false,
   query,
   onQueryChange,
@@ -68,11 +73,16 @@ export function LibraryHeader({
         <div className="user-menu-anchor" ref={userMenuRef}>
           <button
             className="user-menu-button"
-            aria-label="Open account menu"
+            aria-label={`Open account menu for ${userEmail || userDisplayName || "user"}`}
             aria-expanded={userMenuOpen}
             onClick={() => setUserMenuOpen((open) => !open)}
           >
-            <span className="user-menu-avatar">AK</span>
+            <UserAvatar
+              className="user-menu-avatar"
+              email={userEmail}
+              displayName={userDisplayName}
+              userId={userId}
+            />
             <ChevronDown size={14} />
           </button>
           {userMenuOpen && (
