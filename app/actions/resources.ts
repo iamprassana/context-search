@@ -147,11 +147,9 @@ export async function createCollectionAction(
 
   try {
     const { supabase, user } = await getAuthenticatedSupabaseClient(false);
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("collections")
-      .insert({ user_id: user.id, name })
-      .select("name")
-      .single();
+      .insert({ user_id: user.id, name });
     if (error) {
       if (error.code === "23505") {
         return { success: false, error: "A collection with that name already exists." };
@@ -159,7 +157,7 @@ export async function createCollectionAction(
       throw new Error(`Unable to create collection: ${error.message}`);
     }
     revalidatePath("/library");
-    return { success: true, data: data.name };
+    return { success: true, data: name };
   } catch (error) {
     return { success: false, error: getErrorMessage(error) };
   }

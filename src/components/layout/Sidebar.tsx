@@ -90,7 +90,17 @@ export function Sidebar({
       return;
     }
     startCreating(async () => {
-      const result = await onCreateCollection(name);
+      let result: ActionResult<string>;
+      try {
+        result = await onCreateCollection(name);
+      } catch (error) {
+        setCollectionError(
+          error instanceof Error
+            ? `Could not create collection: ${error.message}`
+            : "Could not create collection. Please try again.",
+        );
+        return;
+      }
       if (!result.success) {
         setCollectionError(result.error);
         return;
