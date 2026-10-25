@@ -11,7 +11,6 @@ import {
 import { STORAGE_BUCKET } from "@/lib/storage/config";
 import { chunkText } from "@/lib/search/chunkText";
 import { chunkCode } from "@/lib/search/chunkCode";
-import { extractPdfPagesText } from "@/lib/pdf/extract-text";
 import { fetchReadableWebpageText } from "@/lib/webpage/fetch-readable-text";
 import type { Database } from "@/types/database";
 
@@ -355,6 +354,7 @@ async function indexPdfResource(
 ): Promise<"indexed" | "skipped"> {
   let pages: string[];
   try {
+    const { extractPdfPagesText } = await import("@/lib/pdf/extract-text");
     pages = await extractPdfPagesText(bytes);
   } catch (error) {
     throw new IndexingPipelineError(

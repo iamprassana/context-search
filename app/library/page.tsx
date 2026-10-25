@@ -1,4 +1,5 @@
 import { LibraryDashboard } from "@/components/resources/LibraryDashboard";
+import { connection } from "next/server";
 import { getAuthenticatedSupabaseClient } from "@/lib/supabase/authenticated";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getMaxUploadSizeBytes } from "@/lib/storage/config";
@@ -8,6 +9,7 @@ import type { ResourceLibraryData } from "@/types/resource";
 export const instant = false;
 
 export default async function LibraryPage() {
+  await connection();
   const maxUploadSizeBytes = getMaxUploadSizeBytes();
   if (!isSupabaseConfigured()) {
     return (
