@@ -156,9 +156,9 @@ export async function createCollectionAction(
       }
       throw new Error(`Unable to create collection: ${error.message}`);
     }
-    revalidatePath("/library");
     return { success: true, data: name };
   } catch (error) {
+    console.error("Collection creation failed.", error);
     return { success: false, error: getErrorMessage(error) };
   }
 }
@@ -192,7 +192,6 @@ export async function renameCollectionAction(
       throw new Error(`Unable to rename collection: ${error.message}`);
     }
     if (!data) return { success: false, error: "Collection not found or access denied." };
-    revalidatePath("/library");
     return { success: true, data: data.name };
   } catch (error) {
     return { success: false, error: getErrorMessage(error) };
@@ -216,7 +215,6 @@ export async function deleteCollectionAction(
       .maybeSingle();
     if (error) throw new Error(`Unable to delete collection: ${error.message}`);
     if (!data) return { success: false, error: "Collection not found or access denied." };
-    revalidatePath("/library");
     return { success: true, data: data.name };
   } catch (error) {
     return { success: false, error: getErrorMessage(error) };
