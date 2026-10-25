@@ -44,7 +44,8 @@ export function SearchResults({
           </strong>
           <span>
               Results include notes, code, webpages, PDFs, and visual image
-              matches. PDF matches represent the whole document, not a passage.
+            matches. PDF matches use Jina&apos;s returned embeddings; page text
+            and page numbers are not shown.
           </span>
         </div>
         <button
@@ -80,9 +81,8 @@ export function SearchResults({
         <div className="empty-state">
           <h2>No semantic matches</h2>
           <p>
-            Try another query, or index saved resources. PDFs and images are
-            embedded as whole files; PDF results do not identify a specific
-            page or passage.
+            Try another query, or index saved resources. PDF results do not
+            include extracted page text or identify a specific page.
           </p>
           <button className="text-button" type="button" onClick={onClear}>
             Clear search and filters

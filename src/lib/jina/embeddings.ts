@@ -58,7 +58,7 @@ export async function createEmbeddings(
 export async function createFileEmbedding(
   data: Uint8Array,
   mimeType: JinaFileMimeType,
-): Promise<number[]> {
+): Promise<number[][]> {
   const maximumBytes = JINA_FILE_SIZE_LIMITS[mimeType];
   if (data.byteLength === 0 || data.byteLength > maximumBytes) {
     const limit = mimeType === "application/pdf" ? "8 MB" : "5 MB";
@@ -76,16 +76,17 @@ export async function createFileEmbedding(
       ? { pdf: encoded }
       : { image: encoded };
 
-  const [embedding] = await createEmbeddingBatch(
+  const embeddings = await createEmbeddingBatch(
     { input, task: "retrieval.passage" },
     1,
     apiKey,
     MULTIMODAL_TIMEOUT_MS,
+    mimeType === "application/pdf",
   );
-  if (!embedding) {
+  if (embeddings.length === 0) {
     throw new Error("Jina did not return a file embedding.");
   }
-  return embedding;
+  return embeddings;
 }
 
 async function createEmbeddingBatch(
@@ -93,6 +94,7 @@ async function createEmbeddingBatch(
   expectedCount: number,
   apiKey: string,
   timeoutMs: number,
+  allowMultipleResults = false,
 ): Promise<number[][]> {
   let lastError: Error | undefined;
 
@@ -128,7 +130,7 @@ async function createEmbeddingBatch(
       }
 
       const payload: unknown = await response.json();
-      return parseEmbeddings(payload, expectedCount);
+      return parseEmbeddings(payload, expectedCount, allowMultipleResults);
     } catch (error) {
       if (error instanceof Error && error.message.startsWith("Jina embedding")) {
         throw error;
@@ -152,7 +154,11 @@ async function createEmbeddingBatch(
   );
 }
 
-function parseEmbeddings(value: unknown, expectedCount: number): number[][] {
+function parseEmbeddings(
+  value: unknown,
+  expectedCount: number,
+  allowMultipleResults: boolean,
+): number[][] {
   if (
     !value ||
     typeof value !== "object" ||
@@ -167,9 +173,20 @@ function parseEmbeddings(value: unknown, expectedCount: number): number[][] {
   if (model !== MODEL) {
     throw new Error("Jina returned embeddings from an unexpected model.");
   }
-  if (!Array.isArray(data) || data.length !== expectedCount) {
-    throw new Error("Jina returned an unexpected number of embeddings.");
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new Error("Jina returned no embeddings.");
   }
+  if (!allowMultipleResults && data.length !== expectedCount) {
+    throw new Error(
+      `Jina returned ${data.length} embeddings; expected ${expectedCount}.`,
+    );
+  }
+  if (allowMultipleResults && data.length > 100) {
+    throw new Error(
+      "Jina returned more than 100 PDF embeddings, exceeding the resource indexing limit.",
+    );
+  }
+  const resultCount = allowMultipleResults ? data.length : expectedCount;
 
   const vectors = new Map<number, number[]>();
   for (const item of data) {
@@ -178,7 +195,7 @@ function parseEmbeddings(value: unknown, expectedCount: number): number[][] {
       typeof item.index !== "number" ||
       !Number.isInteger(item.index) ||
       item.index < 0 ||
-      item.index >= expectedCount ||
+      item.index >= resultCount ||
       !isEmbeddingVector(item.embedding)
     ) {
       throw new Error("Jina returned an invalid embedding vector.");
@@ -191,7 +208,7 @@ function parseEmbeddings(value: unknown, expectedCount: number): number[][] {
   }
 
   const orderedVectors: number[][] = [];
-  for (let index = 0; index < expectedCount; index += 1) {
+  for (let index = 0; index < resultCount; index += 1) {
     const vector = vectors.get(index);
     if (!vector) throw new Error("Jina returned incomplete embedding data.");
     orderedVectors.push(vector);

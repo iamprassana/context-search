@@ -240,7 +240,7 @@ async function indexFileResource(
 
   const fileDescription =
     file.mime_type === "application/pdf"
-      ? `Whole-document PDF embedding (no passage extraction): ${resource.title}\nFile: ${file.original_filename}`
+      ? `PDF multimodal segment embedding: ${resource.title}\nFile: ${file.original_filename}`
       : `Visual image embedding: ${resource.title}\nFile: ${file.original_filename}`;
   const noteText = resource.content?.trim()
     ? `Title: ${resource.title}\nType: file\n\nNotes:\n${resource.content.trim()}`
@@ -255,14 +255,6 @@ async function indexFileResource(
     );
   }
 
-  const contents = [fileDescription, ...noteChunks];
-  if (contents.length > 100) {
-    throw new IndexingPipelineError(
-      "text-chunking",
-      "This resource is too long to index in one operation.",
-    );
-  }
-
   const contentHash = createHash("sha256")
     .update(file.mime_type)
     .update(bytes)
@@ -272,7 +264,7 @@ async function indexFileResource(
 
   const { data: existing, error: chunkError } = await supabase
     .from("resource_chunks")
-    .select("chunk_index,content_hash,resource_updated_at")
+    .select("chunk_index,content,content_hash,resource_updated_at")
     .eq("resource_id", resource.id)
     .eq("user_id", userId)
     .order("chunk_index", { ascending: true });
@@ -282,11 +274,14 @@ async function indexFileResource(
       `Unable to check the existing search index: ${chunkError.message}`,
     );
   }
+  const imageContents = [fileDescription, ...noteChunks];
   if (
-    existing?.length === contents.length &&
+    file.mime_type !== "application/pdf" &&
+    existing?.length === imageContents.length &&
     existing.every(
       (chunk, index) =>
         chunk.content_hash === contentHash &&
+        chunk.content === imageContents[index] &&
         chunk.chunk_index === index &&
         chunk.resource_updated_at === resource.updated_at,
     )
@@ -294,9 +289,9 @@ async function indexFileResource(
     return "skipped";
   }
 
-  let fileEmbedding: number[];
+  let fileEmbeddings: number[][];
   try {
-    fileEmbedding = await createFileEmbedding(
+    fileEmbeddings = await createFileEmbedding(
       bytes,
       file.mime_type,
     );
@@ -305,6 +300,34 @@ async function indexFileResource(
       "jina-file-embedding",
       getErrorMessage(error, "Jina file embedding generation failed."),
     );
+  }
+
+  const fileContents =
+    file.mime_type === "application/pdf"
+      ? fileEmbeddings.map(
+          (_, index) =>
+            `${fileDescription}\nSegment ${index + 1} of ${fileEmbeddings.length}`,
+        )
+      : imageContents.slice(0, 1);
+  const contents = [...fileContents, ...noteChunks];
+  if (contents.length > 100) {
+    throw new IndexingPipelineError(
+      "text-chunking",
+      "This resource is too long to index in one operation.",
+    );
+  }
+  if (
+    file.mime_type === "application/pdf" &&
+    existing?.length === contents.length &&
+    existing.every(
+      (chunk, index) =>
+        chunk.content_hash === contentHash &&
+        chunk.content === contents[index] &&
+        chunk.chunk_index === index &&
+        chunk.resource_updated_at === resource.updated_at,
+    )
+  ) {
+    return "skipped";
   }
 
   let noteEmbeddings: number[][] = [];
@@ -320,7 +343,7 @@ async function indexFileResource(
   }
 
   await replaceChunks(supabase, resource, contentHash, contents, [
-    fileEmbedding,
+    ...fileEmbeddings,
     ...noteEmbeddings,
   ]);
   return "indexed";
