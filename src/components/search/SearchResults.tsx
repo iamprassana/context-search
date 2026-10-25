@@ -34,18 +34,17 @@ export function SearchResults({
   onClear,
 }: SearchResultsProps) {
   return (
-    <section aria-label="Semantic search results">
+    <section aria-label="Search results">
       <div className="search-results-caption">
         <div>
           <strong>
             {status === "loading"
               ? "Searching your notes, code, webpages and files…"
-              : `${matches.length} semantic ${matches.length === 1 ? "match" : "matches"}`}
+              : `${matches.length} relevant ${matches.length === 1 ? "match" : "matches"}`}
           </strong>
           <span>
-              Results include notes, code, webpages, PDFs, and visual image
-            matches. PDF matches use Jina&apos;s returned embeddings; page text
-            and page numbers are not shown.
+            Results combine semantic relevance and exact or full-text matches
+            across notes, code, webpages, PDFs, and images.
           </span>
         </div>
         <button
@@ -79,10 +78,10 @@ export function SearchResults({
         </div>
       ) : matches.length === 0 ? (
         <div className="empty-state">
-          <h2>No semantic matches</h2>
+          <h2>No relevant matches</h2>
           <p>
-            Try another query, or index saved resources. PDF results do not
-            include extracted page text or identify a specific page.
+            Try another query or index saved resources. Search only shows
+            resources that pass the relevance checks or match your keywords.
           </p>
           <button className="text-button" type="button" onClick={onClear}>
             Clear search and filters
@@ -94,7 +93,18 @@ export function SearchResults({
         >
           {matches.map(({ resource, excerpt }) => (
             <article className="semantic-search-result" key={resource.id}>
-              <p className="semantic-search-excerpt">{excerpt}</p>
+              {resource.type === "Code" && resource.language && (
+                <span className="semantic-search-language">
+                  {resource.language}
+                </span>
+              )}
+              {resource.type === "Code" ? (
+                <pre className="semantic-search-excerpt semantic-search-code">
+                  <code>{excerpt}</code>
+                </pre>
+              ) : (
+                <p className="semantic-search-excerpt">{excerpt}</p>
+              )}
               <ResourceCard
                 resource={resource}
                 onOpen={onOpen}

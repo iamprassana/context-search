@@ -2,12 +2,19 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createEmbeddings } from "@/lib/jina/embeddings";
+import {
+  fuseRankedCandidates,
+  getMinimumCosineSimilarity,
+  passesCosineSimilarityThreshold,
+  type RankedSearchCandidate,
+  type SearchCandidateMatch,
+} from "@/lib/search/rankResults";
 import type { Database } from "@/types/database";
 import type { SemanticSearchMatch } from "@/types/search";
 
 const MAX_RESULTS = 20;
 
-type SearchStage = "query-embedding" | "vector-search";
+type SearchStage = "query-embedding" | "vector-search" | "keyword-search";
 
 class SearchPipelineError extends Error {
   constructor(
@@ -29,6 +36,38 @@ export async function searchResources(
     throw new Error("Search queries must be 500 characters or fewer.");
   }
 
+  if (normalizedQuery.length <= 2) {
+    const { data, error } = await supabase.rpc(
+      "search_resource_chunks_keyword",
+      {
+        p_query: normalizedQuery,
+        p_match_count: MAX_RESULTS,
+      },
+    );
+    if (error) {
+      const pipelineError = new SearchPipelineError(
+        "keyword-search",
+        `Unable to search resource keywords: ${error.message}`,
+      );
+      logSearchFailure(pipelineError);
+      throw pipelineError;
+    }
+    return fuseRankedCandidates([], mapKeywordCandidates(data ?? []), MAX_RESULTS);
+  }
+
+  let minimumSimilarity: number;
+  try {
+    minimumSimilarity = getMinimumCosineSimilarity();
+  } catch (error) {
+    const pipelineError = new SearchPipelineError(
+      "vector-search",
+      error instanceof Error
+        ? error.message
+        : "The configured similarity threshold is invalid.",
+    );
+    logSearchFailure(pipelineError);
+    throw pipelineError;
+  }
   let queryEmbedding: number[] | undefined;
   try {
     [queryEmbedding] = await createEmbeddings(
@@ -54,25 +93,65 @@ export async function searchResources(
     throw error;
   }
 
-  const { data, error } = await supabase.rpc("search_resource_chunks", {
-    p_query_embedding: JSON.stringify(queryEmbedding),
-    p_match_count: MAX_RESULTS,
-  });
+  const [semanticResult, keywordResult] = await Promise.all([
+    supabase.rpc("search_resource_chunks", {
+      p_query_embedding: JSON.stringify(queryEmbedding),
+      p_match_count: MAX_RESULTS,
+    }),
+    supabase.rpc("search_resource_chunks_keyword", {
+      p_query: normalizedQuery,
+      p_match_count: MAX_RESULTS,
+    }),
+  ]);
 
-  if (error) {
+  if (semanticResult.error) {
     const pipelineError = new SearchPipelineError(
       "vector-search",
-      `Unable to search your resources: ${error.message}`,
+      `Unable to search your resources: ${semanticResult.error.message}`,
+    );
+    logSearchFailure(pipelineError);
+    throw pipelineError;
+  }
+  if (keywordResult.error) {
+    const pipelineError = new SearchPipelineError(
+      "keyword-search",
+      `Unable to search resource keywords: ${keywordResult.error.message}`,
     );
     logSearchFailure(pipelineError);
     throw pipelineError;
   }
 
-  return (data ?? []).map((row) => ({
+  const semanticCandidates: RankedSearchCandidate[] = (semanticResult.data ?? [])
+    .filter((row) =>
+      passesCosineSimilarityThreshold(row.distance, minimumSimilarity),
+    )
+    .map((row) => ({
+      resourceId: row.resource_id,
+      title: row.title,
+      type: row.resource_type,
+      excerpt: row.matched_text,
+    }));
+  const keywordCandidates = mapKeywordCandidates(keywordResult.data ?? []);
+
+  return fuseRankedCandidates(
+    semanticCandidates,
+    keywordCandidates,
+    MAX_RESULTS,
+  );
+}
+
+type KeywordSearchRow =
+  Database["public"]["Functions"]["search_resource_chunks_keyword"]["Returns"][number];
+
+function mapKeywordCandidates(
+  rows: readonly KeywordSearchRow[],
+): SearchCandidateMatch[] {
+  return rows.map((row) => ({
     resourceId: row.resource_id,
     title: row.title,
     type: row.resource_type,
     excerpt: row.matched_text,
+    exactKeywordMatch: row.exact_match,
   }));
 }
 

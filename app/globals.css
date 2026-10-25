@@ -2085,6 +2085,19 @@ kbd {
   padding: 0 0 0 9px;
 }
 
+.semantic-search-code {
+  font-family: var(--font-geist-mono), Consolas, monospace;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.semantic-search-language {
+  color: #777d73;
+  display: block;
+  font-size: 10px;
+  margin: 0 0 4px 2px;
+}
+
 @media (max-width: 640px) {
   .search-results-caption {
     align-items: flex-start;

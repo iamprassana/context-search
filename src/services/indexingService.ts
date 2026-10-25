@@ -10,6 +10,8 @@ import {
 } from "@/lib/jina/embeddings";
 import { STORAGE_BUCKET } from "@/lib/storage/config";
 import { chunkText } from "@/lib/search/chunkText";
+import { chunkCode } from "@/lib/search/chunkCode";
+import { extractPdfPagesText } from "@/lib/pdf/extract-text";
 import { fetchReadableWebpageText } from "@/lib/webpage/fetch-readable-text";
 import type { Database } from "@/types/database";
 
@@ -31,6 +33,7 @@ export type IndexingStage =
   | "file-size"
   | "storage-download"
   | "file-validation"
+  | "pdf-text-extraction"
   | "jina-file-embedding"
   | "url-page-fetch"
   | "existing-index-read"
@@ -112,7 +115,14 @@ async function indexResourceForUser(
     .digest("hex");
   let chunks: string[];
   try {
-    chunks = chunkText(searchableText);
+    chunks =
+      resource.resource_type === "code"
+        ? chunkCode(
+            resource.content ?? "",
+            resource.title,
+            resource.language ?? "Other",
+          )
+        : chunkText(searchableText);
   } catch {
     throw new IndexingPipelineError(
       "text-chunking",
@@ -238,10 +248,18 @@ async function indexFileResource(
     );
   }
 
+  if (file.mime_type === "application/pdf") {
+    return indexPdfResource(
+      supabase,
+      userId,
+      resource,
+      file.original_filename,
+      bytes,
+    );
+  }
+
   const fileDescription =
-    file.mime_type === "application/pdf"
-      ? `PDF multimodal segment embedding: ${resource.title}\nFile: ${file.original_filename}`
-      : `Visual image embedding: ${resource.title}\nFile: ${file.original_filename}`;
+    `Visual image embedding: ${resource.title}\nFile: ${file.original_filename}`;
   const noteText = resource.content?.trim()
     ? `Title: ${resource.title}\nType: file\n\nNotes:\n${resource.content.trim()}`
     : "";
@@ -276,7 +294,6 @@ async function indexFileResource(
   }
   const imageContents = [fileDescription, ...noteChunks];
   if (
-    file.mime_type !== "application/pdf" &&
     existing?.length === imageContents.length &&
     existing.every(
       (chunk, index) =>
@@ -302,13 +319,7 @@ async function indexFileResource(
     );
   }
 
-  const fileContents =
-    file.mime_type === "application/pdf"
-      ? fileEmbeddings.map(
-          (_, index) =>
-            `${fileDescription}\nSegment ${index + 1} of ${fileEmbeddings.length}`,
-        )
-      : imageContents.slice(0, 1);
+  const fileContents = imageContents.slice(0, 1);
   const contents = [...fileContents, ...noteChunks];
   if (contents.length > 100) {
     throw new IndexingPipelineError(
@@ -316,20 +327,6 @@ async function indexFileResource(
       "This resource is too long to index in one operation.",
     );
   }
-  if (
-    file.mime_type === "application/pdf" &&
-    existing?.length === contents.length &&
-    existing.every(
-      (chunk, index) =>
-        chunk.content_hash === contentHash &&
-        chunk.content === contents[index] &&
-        chunk.chunk_index === index &&
-        chunk.resource_updated_at === resource.updated_at,
-    )
-  ) {
-    return "skipped";
-  }
-
   let noteEmbeddings: number[][] = [];
   if (noteChunks.length > 0) {
     try {
@@ -346,6 +343,109 @@ async function indexFileResource(
     ...fileEmbeddings,
     ...noteEmbeddings,
   ]);
+  return "indexed";
+}
+
+async function indexPdfResource(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  resource: IndexableResource,
+  originalFilename: string,
+  bytes: Uint8Array,
+): Promise<"indexed" | "skipped"> {
+  let pages: string[];
+  try {
+    pages = await extractPdfPagesText(bytes);
+  } catch (error) {
+    throw new IndexingPipelineError(
+      "pdf-text-extraction",
+      getErrorMessage(error, "Unable to extract selectable text from this PDF."),
+    );
+  }
+  if (pages.length === 0) {
+    throw new IndexingPipelineError(
+      "pdf-text-extraction",
+      "No selectable text was found in this PDF. Scanned PDFs require OCR, which is not available.",
+    );
+  }
+
+  const fileDescription = `Title: ${resource.title}\nType: PDF\nFile: ${originalFilename}`;
+  let pdfChunks: string[];
+  let noteChunks: string[];
+  try {
+    pdfChunks = pages.flatMap((page) =>
+      chunkText(`${fileDescription}\n${page}`),
+    );
+    noteChunks = resource.content?.trim()
+      ? chunkText(
+          `Title: ${resource.title}\nType: PDF notes\n\n${resource.content.trim()}`,
+        )
+      : [];
+  } catch (error) {
+    throw new IndexingPipelineError(
+      "text-chunking",
+      getErrorMessage(error, "Unable to split the PDF text into search chunks."),
+    );
+  }
+
+  const contents = [...pdfChunks, ...noteChunks];
+  if (contents.length === 0) {
+    throw new IndexingPipelineError(
+      "pdf-text-extraction",
+      "No searchable text was found in this PDF.",
+    );
+  }
+  if (contents.length > 100) {
+    throw new IndexingPipelineError(
+      "text-chunking",
+      "This PDF is too long to index in one operation (maximum 100 chunks).",
+    );
+  }
+
+  const extractedText = pages.join("\n\n");
+  const contentHash = createHash("sha256")
+    .update("application/pdf")
+    .update(bytes)
+    .update(resource.title)
+    .update(extractedText)
+    .update(resource.content?.trim() ?? "")
+    .digest("hex");
+  const { data: existing, error: chunkError } = await supabase
+    .from("resource_chunks")
+    .select("chunk_index,content,content_hash,resource_updated_at")
+    .eq("resource_id", resource.id)
+    .eq("user_id", userId)
+    .order("chunk_index", { ascending: true });
+  if (chunkError) {
+    throw new IndexingPipelineError(
+      "existing-index-read",
+      `Unable to check the existing PDF search index: ${chunkError.message}`,
+    );
+  }
+  if (
+    existing?.length === contents.length &&
+    existing.every(
+      (chunk, index) =>
+        chunk.content_hash === contentHash &&
+        chunk.content === contents[index] &&
+        chunk.chunk_index === index &&
+        chunk.resource_updated_at === resource.updated_at,
+    )
+  ) {
+    return "skipped";
+  }
+
+  let embeddings: number[][];
+  try {
+    embeddings = await createEmbeddings(contents, "retrieval.passage");
+  } catch (error) {
+    throw new IndexingPipelineError(
+      "jina-embedding",
+      getErrorMessage(error, "Jina PDF text embedding generation failed."),
+    );
+  }
+
+  await replaceChunks(supabase, resource, contentHash, contents, embeddings);
   return "indexed";
 }
 

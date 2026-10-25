@@ -247,6 +247,20 @@ export type Database = {
           distance: number;
         }>;
       };
+      search_resource_chunks_keyword: {
+        Args: {
+          p_query: string;
+          p_match_count?: number;
+        };
+        Returns: Array<{
+          resource_id: string;
+          title: string;
+          resource_type: "url" | "note" | "code" | "file";
+          matched_text: string;
+          keyword_score: number;
+          exact_match: boolean;
+        }>;
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

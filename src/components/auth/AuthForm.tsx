@@ -12,10 +12,12 @@ export function AuthForm({
   mode,
   nextPath = "/library",
   configurationError,
+  initialMessage,
 }: {
   mode: AuthMode;
   nextPath?: string;
   configurationError?: string;
+  initialMessage?: string;
 }) {
   const isSignup = mode === "signup";
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -104,9 +106,9 @@ export function AuthForm({
               {state.error}
             </p>
           )}
-          {state.message && (
+          {(state.message || initialMessage) && (
             <p className="form-notice" role="status">
-              {state.message}
+              {state.message || initialMessage}
             </p>
           )}
           <button

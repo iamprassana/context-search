@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -42,8 +43,19 @@ export async function signUpAction(
   }
   if (!isSupabaseConfigured()) return { error: supabaseSetupMessage };
 
+  const emailRedirectTo = await getConfirmationRedirectUrl();
+  if (!emailRedirectTo) {
+    return {
+      error: "Unable to determine the site URL for the confirmation email.",
+    };
+  }
+
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { emailRedirectTo },
+  });
   if (error) return { error: error.message };
   if (data.session) redirect("/library");
   return {
@@ -74,6 +86,27 @@ function isSafeRedirect(value: string): boolean {
     !value.startsWith("//") &&
     !value.includes("\\")
   );
+}
+
+async function getConfirmationRedirectUrl(): Promise<string | null> {
+  const origin =
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+    (await headers()).get("origin");
+  if (!origin) return null;
+
+  try {
+    const siteUrl = new URL(origin);
+    if (
+      !["http:", "https:"].includes(siteUrl.protocol) ||
+      siteUrl.username ||
+      siteUrl.password
+    ) {
+      return null;
+    }
+    return new URL("/auth/callback?next=%2Flibrary", siteUrl.origin).toString();
+  } catch {
+    return null;
+  }
 }
 
 const supabaseSetupMessage =

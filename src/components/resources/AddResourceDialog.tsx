@@ -233,7 +233,10 @@ export function AddResourceDialog({
                 <select name="language" defaultValue="TypeScript">
                   <option>TypeScript</option>
                   <option>JavaScript</option>
+                  <option>Java</option>
                   <option>Python</option>
+                  <option>C</option>
+                  <option>C++</option>
                   <option>SQL</option>
                   <option>Other</option>
                 </select>

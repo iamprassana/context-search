@@ -13,9 +13,9 @@ export const metadata: Metadata = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; confirmation?: string }>;
 }) {
-  const { next } = await searchParams;
+  const { next, confirmation } = await searchParams;
   let configurationError: string | undefined;
 
   if (isSupabaseConfigured()) {
@@ -35,6 +35,11 @@ export default async function LoginPage({
       mode="login"
       nextPath={isSafePath(next) ? next : "/library"}
       configurationError={configurationError}
+      initialMessage={
+        confirmation === "failed"
+          ? "That confirmation link is invalid or expired. Sign up again to request a new email."
+          : undefined
+      }
     />
   );
 }
