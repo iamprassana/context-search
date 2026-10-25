@@ -10,6 +10,19 @@ ContextKeep is a personal knowledge library for saving notes, code snippets, web
 - Index text and code with Jina embeddings. Extract selectable PDF text for keyword and semantic search; use multimodal embeddings for PDFs and images.
 - Keep user resources and uploaded files scoped to their owner with Supabase Auth, row-level security, and private Storage.
 
+## Data flow
+
+```mermaid
+flowchart LR
+    User[You] --> App[ContextKeep]
+    App -->|Sign-in and saved resources| Supabase[Supabase]
+    Supabase -->|Private files and database| App
+    App -->|Create embeddings for saved content| Jina[Jina AI]
+    Jina -->|Embeddings| App
+    App -->|Save and search content| Supabase
+    App -->|Search results| User
+```
+
 ## Requirements
 
 - [Bun](https://bun.sh/) 1.3.1 (the repository's package manager)
