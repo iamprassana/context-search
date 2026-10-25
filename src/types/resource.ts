@@ -1,6 +1,11 @@
 export const RESOURCE_TYPES = ["Link", "Note", "Code", "Image", "PDF"] as const;
 
 export type ResourceType = (typeof RESOURCE_TYPES)[number];
+export type Workspace = {
+  id: string;
+  name: string;
+  description: string;
+};
 export type ResourceCategory = "URL" | "Note" | "Code" | "File";
 export type LibraryView =
   | "All resources"
@@ -12,6 +17,8 @@ export type ResourceLayout = "grid" | "list";
 
 export type Resource = {
   id: string;
+  workspaceId: string;
+  workspaceName: string;
   title: string;
   type: ResourceType;
   collection: string;
@@ -36,6 +43,7 @@ export type Resource = {
 export type ResourceInput = {
   title: string;
   type: ResourceType;
+  workspaceId: string;
   collectionNames: string[];
   url?: string;
   content?: string;
@@ -48,6 +56,7 @@ export type ResourceInput = {
 export type ResourceLibraryData = {
   resources: Resource[];
   collections: string[];
+  workspaces: Workspace[];
 };
 
 export type ResourceFileLinks = {

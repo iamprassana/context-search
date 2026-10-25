@@ -74,7 +74,7 @@ export function SearchResults({
         </div>
       ) : status === "loading" ? (
         <div className="empty-state" role="status" aria-live="polite">
-          <p>Searching notes, code, saved webpages, PDFs and images…</p>
+          <p>Searching all workspaces for notes, code, webpages, PDFs and images…</p>
         </div>
       ) : matches.length === 0 ? (
         <div className="empty-state">
@@ -91,8 +91,9 @@ export function SearchResults({
         <div
           className={`resource-grid ${layout === "list" ? "resource-list" : ""}`}
         >
-          {matches.map(({ resource, excerpt }) => (
+          {matches.map(({ resource, excerpt, workspaceName }) => (
             <article className="semantic-search-result" key={resource.id}>
+              <span className="search-workspace-label">{workspaceName}</span>
               {resource.type === "Code" && resource.language && (
                 <span className="semantic-search-language">
                   {resource.language}

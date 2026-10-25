@@ -20,6 +20,7 @@ export type Database = {
         {
           id: string;
           user_id: string;
+          workspace_id: string;
           title: string;
           resource_type: "url" | "note" | "code" | "file";
           url: string | null;
@@ -34,6 +35,7 @@ export type Database = {
         {
           id?: string;
           user_id: string;
+          workspace_id: string;
           title: string;
           resource_type: "url" | "note" | "code" | "file";
           url?: string | null;
@@ -47,6 +49,7 @@ export type Database = {
         },
         {
           title?: string;
+          workspace_id?: string;
           resource_type?: "url" | "note" | "code" | "file";
           url?: string | null;
           content?: string | null;
@@ -54,6 +57,29 @@ export type Database = {
           file_name?: string | null;
           mime_type?: string | null;
           is_favorite?: boolean;
+          updated_at?: string;
+        }
+      >;
+      workspaces: Table<
+        {
+          id: string;
+          user_id: string;
+          name: string;
+          description: string | null;
+          created_at: string;
+          updated_at: string;
+        },
+        {
+          id?: string;
+          user_id: string;
+          name: string;
+          description?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        },
+        {
+          name?: string;
+          description?: string | null;
           updated_at?: string;
         }
       >;
@@ -206,6 +232,7 @@ export type Database = {
           p_mime_type: string | null;
           p_collection_names: string[];
           p_tags: string[];
+          p_workspace_id: string;
         };
         Returns: string;
       };
@@ -241,6 +268,8 @@ export type Database = {
         };
         Returns: Array<{
           resource_id: string;
+          workspace_id: string;
+          workspace_name: string;
           title: string;
           resource_type: "url" | "note" | "code" | "file";
           matched_text: string;
@@ -254,12 +283,21 @@ export type Database = {
         };
         Returns: Array<{
           resource_id: string;
+          workspace_id: string;
+          workspace_name: string;
           title: string;
           resource_type: "url" | "note" | "code" | "file";
           matched_text: string;
           keyword_score: number;
           exact_match: boolean;
         }>;
+      };
+      move_resource_to_workspace: {
+        Args: {
+          p_resource_id: string;
+          p_workspace_id: string;
+        };
+        Returns: undefined;
       };
     };
     Enums: Record<string, never>;

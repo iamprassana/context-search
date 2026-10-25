@@ -3,6 +3,8 @@ const RECIPROCAL_RANK_FUSION_CONSTANT = 60;
 
 export type RankedSearchCandidate = {
   resourceId: string;
+  workspaceId: string;
+  workspaceName: string;
   title: string;
   type: "url" | "note" | "code" | "file";
   excerpt: string;

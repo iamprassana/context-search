@@ -28,6 +28,8 @@ export function validateResourceInput(
     resourceTypes.has(candidate.type as ResourceType)
       ? (candidate.type as ResourceType)
       : null;
+  const workspaceId =
+    typeof candidate.workspaceId === "string" ? candidate.workspaceId.trim() : "";
   const url = typeof candidate.url === "string" ? candidate.url.trim() : "";
   const content =
     typeof candidate.content === "string" ? candidate.content.trim() : "";
@@ -63,6 +65,9 @@ export function validateResourceInput(
   }
   if (!type) {
     return { error: "Choose a supported resource type." };
+  }
+  if (!isUuid(workspaceId)) {
+    return { error: "Choose a valid workspace." };
   }
   if (content.length > 200_000) {
     return { error: "Content must be 200,000 characters or fewer." };
@@ -120,6 +125,7 @@ export function validateResourceInput(
     input: {
       title,
       type,
+      workspaceId,
       collectionNames,
       url: url || undefined,
       content: content || undefined,
@@ -129,6 +135,12 @@ export function validateResourceInput(
       tags: Array.from(new Set(tags)),
     },
   };
+}
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  );
 }
 
 export function isHttpUrl(value: string): boolean {

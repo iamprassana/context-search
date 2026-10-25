@@ -3,27 +3,52 @@
 import {
   BookOpen,
   Bookmark,
+  Check,
   Clock3,
   Folder,
+  Pencil,
+  Plus,
+  Trash2,
   Menu,
   Search,
   Settings2,
   Star,
   X,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { UserAvatar } from "@/components/layout/UserAvatar";
-import type { LibraryView, Resource } from "@/types/resource";
+import { WorkspaceSwitcher } from "@/components/layout/WorkspaceSwitcher";
+import type {
+  ActionResult,
+  LibraryView,
+  Resource,
+  Workspace,
+} from "@/types/resource";
 
 type SidebarProps = {
   activeView: LibraryView | string;
   collections: readonly string[];
   resources: Resource[];
+  workspaces: readonly Workspace[];
+  activeWorkspaceId: string;
   userEmail: string;
   userDisplayName: string;
   userId: string;
   mobileOpen: boolean;
   onNavigate: (view: LibraryView | string) => void;
+  onSelectWorkspace: (workspaceId: string) => void;
+  onCreateWorkspace: (name: string) => Promise<ActionResult<Workspace>>;
+  onRenameWorkspace: (
+    workspaceId: string,
+    name: string,
+  ) => Promise<ActionResult<Workspace>>;
+  onDeleteWorkspace: (workspaceId: string) => Promise<ActionResult<null>>;
+  onCreateCollection: (name: string) => Promise<ActionResult<string>>;
+  onRenameCollection: (
+    oldName: string,
+    name: string,
+  ) => Promise<ActionResult<string>>;
+  onDeleteCollection: (name: string) => Promise<ActionResult<string>>;
   onSearch: () => void;
   onToggleMobile: () => void;
 };
@@ -32,15 +57,83 @@ export function Sidebar({
   activeView,
   collections,
   resources,
+  workspaces,
+  activeWorkspaceId,
   userEmail,
   userDisplayName,
   userId,
   mobileOpen,
   onNavigate,
+  onSelectWorkspace,
+  onCreateWorkspace,
+  onRenameWorkspace,
+  onDeleteWorkspace,
+  onCreateCollection,
+  onRenameCollection,
+  onDeleteCollection,
   onSearch,
   onToggleMobile,
 }: SidebarProps) {
+  const [creatingCollection, setCreatingCollection] = useState(false);
+  const [collectionName, setCollectionName] = useState("");
+  const [collectionError, setCollectionError] = useState("");
+  const [creatingPending, startCreating] = useTransition();
+  const [editingCollection, setEditingCollection] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
   const favoritesCount = resources.filter((resource) => resource.favorite).length;
+
+  function submitCollection(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const name = collectionName.trim();
+    if (!name) {
+      setCollectionError("Enter a collection name.");
+      return;
+    }
+    startCreating(async () => {
+      const result = await onCreateCollection(name);
+      if (!result.success) {
+        setCollectionError(result.error);
+        return;
+      }
+      setCollectionName("");
+      setCollectionError("");
+      setCreatingCollection(false);
+    });
+  }
+
+  function submitCollectionEdit(
+    event: FormEvent<HTMLFormElement>,
+    oldName: string,
+  ) {
+    event.preventDefault();
+    const name = collectionName.trim();
+    if (!name) {
+      setCollectionError("Enter a collection name.");
+      return;
+    }
+    startCreating(async () => {
+      const result = await onRenameCollection(oldName, name);
+      if (!result.success) {
+        setCollectionError(result.error);
+        return;
+      }
+      setCollectionName("");
+      setCollectionError("");
+      setEditingCollection(null);
+    });
+  }
+
+  function deleteCollection(name: string) {
+    startCreating(async () => {
+      const result = await onDeleteCollection(name);
+      if (!result.success) {
+        setCollectionError(result.error);
+        return;
+      }
+      setCollectionError("");
+      setConfirmingDelete(null);
+    });
+  }
 
   return (
     <>
@@ -68,13 +161,14 @@ export function Sidebar({
           </button>
         </div>
 
-        <div className="workspace-switch">
-          <span className="workspace-avatar">S</span>
-          <span className="workspace-copy">
-            <strong>Studio North</strong>
-            <small>Personal workspace</small>
-          </span>
-        </div>
+        <WorkspaceSwitcher
+          workspaces={workspaces}
+          activeWorkspaceId={activeWorkspaceId}
+          onSelect={onSelectWorkspace}
+          onCreate={onCreateWorkspace}
+          onRename={onRenameWorkspace}
+          onDelete={onDeleteWorkspace}
+        />
 
         <button className="sidebar-search" onClick={onSearch}>
           <Search size={15} />
@@ -109,19 +203,132 @@ export function Sidebar({
         <div className="nav-group collection-group">
           <div className="nav-label-row">
             <p className="nav-label">COLLECTIONS</p>
+            <button
+              type="button"
+              className="collection-create-button"
+              aria-label="Create collection"
+              title="Create collection"
+              onClick={() => {
+                setCreatingCollection((current) => !current);
+                setCollectionName("");
+                setCollectionError("");
+              }}
+            >
+              <Plus size={14} />
+            </button>
           </div>
+          {creatingCollection && (
+            <form className="workspace-name-form" onSubmit={submitCollection}>
+              <input
+                aria-label="Collection name"
+                maxLength={100}
+                autoFocus
+                value={collectionName}
+                onChange={(event) => setCollectionName(event.target.value)}
+              />
+              <button
+                type="submit"
+                disabled={creatingPending}
+                aria-label="Save collection"
+              >
+                <Check size={14} />
+              </button>
+            </form>
+          )}
+          {collectionError && (
+            <p className="workspace-error" role="alert">
+              {collectionError}
+            </p>
+          )}
           {collections.map((collection) => (
-            <SidebarItem
-              key={collection}
-              active={activeView === collection}
-              count={
-                resources.filter((resource) => resource.collection === collection)
-                  .length
-              }
-              icon={<Folder size={15} />}
-              label={collection}
-              onClick={() => onNavigate(collection)}
-            />
+            <div className="collection-sidebar-item" key={collection}>
+              {editingCollection === collection ? (
+                <form
+                  className="workspace-name-form"
+                  onSubmit={(event) => submitCollectionEdit(event, collection)}
+                >
+                  <input
+                    aria-label={`Rename ${collection}`}
+                    maxLength={100}
+                    autoFocus
+                    value={collectionName}
+                    onChange={(event) => setCollectionName(event.target.value)}
+                  />
+                  <button type="submit" disabled={creatingPending} aria-label="Save collection name">
+                    <Check size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    className="collection-cancel-button"
+                    onClick={() => {
+                      setEditingCollection(null);
+                      setCollectionError("");
+                    }}
+                    aria-label="Cancel collection rename"
+                  >
+                    <X size={14} />
+                  </button>
+                </form>
+              ) : confirmingDelete === collection ? (
+                <div className="collection-delete-confirm">
+                  <span>Delete “{collection}”?</span>
+                  <button
+                    type="button"
+                    onClick={() => deleteCollection(collection)}
+                    disabled={creatingPending}
+                  >
+                    Delete
+                  </button>
+                  <button
+                    type="button"
+                    className="collection-cancel-button"
+                    onClick={() => setConfirmingDelete(null)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <SidebarItem
+                    active={activeView === collection}
+                    count={
+                      resources.filter((resource) => resource.collectionNames.includes(collection))
+                        .length
+                    }
+                    icon={<Folder size={15} />}
+                    label={collection}
+                    onClick={() => onNavigate(collection)}
+                  />
+                  <div className="collection-row-actions">
+                    <button
+                      type="button"
+                      aria-label={`Rename ${collection}`}
+                      title={`Rename ${collection}`}
+                      onClick={() => {
+                        setEditingCollection(collection);
+                        setCollectionName(collection);
+                        setCollectionError("");
+                        setConfirmingDelete(null);
+                      }}
+                    >
+                      <Pencil size={12} />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Delete ${collection}`}
+                      title={`Delete ${collection}`}
+                      onClick={() => {
+                        setConfirmingDelete(collection);
+                        setCollectionError("");
+                        setEditingCollection(null);
+                      }}
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           ))}
         </div>
 

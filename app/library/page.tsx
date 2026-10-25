@@ -14,6 +14,7 @@ export default async function LibraryPage() {
       <LibraryDashboard
         initialResources={[]}
         initialCollections={[]}
+        initialWorkspaces={[]}
         userEmail=""
         userDisplayName=""
         userId=""
@@ -32,6 +33,7 @@ export default async function LibraryPage() {
       <LibraryDashboard
         initialResources={[]}
         initialCollections={[]}
+        initialWorkspaces={[]}
         userEmail={user.email ?? ""}
         userDisplayName={getUserDisplayName(user.user_metadata)}
         userId={user.id}
@@ -49,6 +51,7 @@ export default async function LibraryPage() {
     <LibraryDashboard
       initialResources={library.resources}
       initialCollections={library.collections}
+      initialWorkspaces={library.workspaces}
       userEmail={user.email ?? ""}
       userDisplayName={getUserDisplayName(user.user_metadata)}
       userId={user.id}

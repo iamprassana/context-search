@@ -43,6 +43,10 @@ export async function listResources(
         .select("id,resource_id,file_size")
         .eq("user_id", userId),
     ]);
+  const workspacesResult = await supabase
+    .from("workspaces")
+    .select("id,name")
+    .eq("user_id", userId);
 
   const queryError =
     resourcesResult.error ??
@@ -50,7 +54,8 @@ export async function listResources(
     collectionLinksResult.error ??
     tagsResult.error ??
     tagLinksResult.error ??
-    filesResult.error;
+    filesResult.error ??
+    workspacesResult.error;
   if (queryError) {
     throw new Error(`Unable to load your library: ${queryError.message}`);
   }
@@ -77,14 +82,31 @@ export async function listResources(
   const fileByResource = new Map(
     (filesResult.data ?? []).map((file) => [file.resource_id, file]),
   );
+  const workspaceNameById = new Map(
+    (workspacesResult.data ?? []).map((workspace) => [
+      workspace.id,
+      workspace.name,
+    ]),
+  );
 
   return {
     resources: (resourcesResult.data ?? []).map((row) =>
-      mapResource(row, collectionsByResource, tagsByResource, fileByResource),
+      mapResource(
+        row,
+        collectionsByResource,
+        tagsByResource,
+        fileByResource,
+        workspaceNameById,
+      ),
     ),
     collections: (collectionsResult.data ?? []).map(
       (collection) => collection.name,
     ),
+    workspaces: (workspacesResult.data ?? []).map((workspace) => ({
+      id: workspace.id,
+      name: workspace.name,
+      description: "",
+    })),
   };
 }
 
@@ -123,7 +145,7 @@ export async function updateResource(
 ): Promise<Resource> {
   const { data: existing, error: existingError } = await supabase
     .from("resources")
-    .select("resource_type,file_name,mime_type")
+    .select("resource_type,file_name,mime_type,workspace_id")
     .eq("id", resourceId)
     .eq("user_id", userId)
     .maybeSingle();
@@ -136,6 +158,7 @@ export async function updateResource(
     existing.resource_type === "file"
       ? {
           ...input,
+          workspaceId: existing.workspace_id,
           type: existing.mime_type === "application/pdf" ? "PDF" : "Image",
           fileName: existing.file_name ?? undefined,
           mimeType: existing.mime_type ?? undefined,
@@ -143,7 +166,7 @@ export async function updateResource(
       : input;
   const { error } = await supabase.rpc("update_resource_with_relations", {
     p_resource_id: resourceId,
-    ...toRpcArguments(safeInput),
+    ...toUpdateRpcArguments(safeInput),
   });
   if (error) throw new Error(`Unable to update resource: ${error.message}`);
   const library = await listResources(supabase, userId);
@@ -212,7 +235,7 @@ export async function deleteResourceWithFile(
   await deleteResource(supabase, resourceId);
 }
 
-function toRpcArguments(input: ResourceInput) {
+function toBaseRpcArguments(input: ResourceInput) {
   return {
     p_title: input.title,
     p_resource_type: databaseResourceType(input.type),
@@ -224,6 +247,17 @@ function toRpcArguments(input: ResourceInput) {
     p_collection_names: input.collectionNames,
     p_tags: input.tags,
   };
+}
+
+function toRpcArguments(input: ResourceInput) {
+  return {
+    ...toBaseRpcArguments(input),
+    p_workspace_id: input.workspaceId,
+  };
+}
+
+function toUpdateRpcArguments(input: ResourceInput) {
+  return toBaseRpcArguments(input);
 }
 
 function databaseResourceType(
@@ -242,6 +276,7 @@ function mapResource(
     string,
     Pick<ResourceFileRow, "id" | "resource_id" | "file_size">
   >,
+  workspaceNameById: Map<string, string>,
 ): Resource {
   const collectionNames = collectionsByResource.get(row.id) ?? [];
   const file = filesByResource.get(row.id);
@@ -250,6 +285,8 @@ function mapResource(
 
   return {
     id: row.id,
+    workspaceId: row.workspace_id,
+    workspaceName: workspaceNameById.get(row.workspace_id) ?? "Workspace",
     title: row.title,
     type,
     collection: collectionNames[0] ?? "Unsorted",

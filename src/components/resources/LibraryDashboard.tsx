@@ -6,6 +6,13 @@ import {
   deleteResourceAction,
   setFavoriteAction,
   updateResourceAction,
+  createWorkspaceAction,
+  createCollectionAction,
+  deleteCollectionAction,
+  deleteWorkspaceAction,
+  moveResourceToWorkspaceAction,
+  renameWorkspaceAction,
+  renameCollectionAction,
 } from "../../../app/actions/resources";
 import {
   indexResourcesBatchAction,
@@ -38,12 +45,14 @@ import type {
   ResourceFilter,
   ResourceInput,
   ResourceLayout,
+  Workspace,
 } from "@/types/resource";
 import { useRouter } from "next/navigation";
 
 export function LibraryDashboard({
   initialResources,
   initialCollections,
+  initialWorkspaces,
   userEmail,
   userDisplayName,
   userId,
@@ -52,6 +61,7 @@ export function LibraryDashboard({
 }: {
   initialResources: Resource[];
   initialCollections: string[];
+  initialWorkspaces: Workspace[];
   userEmail: string;
   userDisplayName: string;
   userId: string;
@@ -61,6 +71,10 @@ export function LibraryDashboard({
   const router = useRouter();
   const [resources, setResources] = useState(initialResources);
   const [collections, setCollections] = useState(initialCollections);
+  const [workspaces, setWorkspaces] = useState(initialWorkspaces);
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState(
+    initialWorkspaces[0]?.id ?? "",
+  );
   const [activeView, setActiveView] = useState<LibraryView | string>(
     "All resources",
   );
@@ -113,6 +127,11 @@ export function LibraryDashboard({
     return () => window.removeEventListener("keydown", handleKeyboard);
   }, [focusSearch]);
 
+  const workspaceResources = useMemo(
+    () => resources.filter((resource) => resource.workspaceId === activeWorkspaceId),
+    [activeWorkspaceId, resources],
+  );
+
   const baseResources = useMemo(() => {
     const filtered = resources.filter((resource) => {
       const matchesView =
@@ -126,10 +145,15 @@ export function LibraryDashboard({
       const matchesTag = !activeTag || resource.tags.includes(activeTag);
       const matchesType =
         typeFilter === "All types" || resource.type === typeFilter;
-      return matchesView && matchesTag && matchesType;
+      return (
+        resource.workspaceId === activeWorkspaceId &&
+        matchesView &&
+        matchesTag &&
+        matchesType
+      );
     });
     return newestFirst ? filtered : [...filtered].reverse();
-  }, [activeTag, activeView, newestFirst, resources, typeFilter]);
+  }, [activeTag, activeView, activeWorkspaceId, newestFirst, resources, typeFilter]);
 
   const normalizedQuery = query.trim();
   const isSearching = normalizedQuery.length > 0;
@@ -190,14 +214,31 @@ export function LibraryDashboard({
     const resourcesById = new Map(
       resources.map((resource) => [resource.id, resource]),
     );
-    const visibleIds = new Set(baseResources.map((resource) => resource.id));
+    const visibleIds = new Set(
+      resources
+        .filter((resource) => {
+          const matchesTag = !activeTag || resource.tags.includes(activeTag);
+          const matchesType =
+            typeFilter === "All types" || resource.type === typeFilter;
+          const matchesView =
+            activeView === "All resources" ||
+            activeView === "Settings" ||
+            (activeView === "Favorites"
+              ? resource.favorite
+              : activeView === "Recently added"
+                ? ["Today", "Yesterday", "Just now"].includes(resource.savedAt)
+                : resource.collection === activeView);
+          return matchesTag && matchesType && matchesView;
+        })
+        .map((resource) => resource.id),
+    );
     return currentSearch.results.flatMap((match) => {
       const resource = resourcesById.get(match.resourceId);
       return resource && visibleIds.has(resource.id)
-        ? [{ resource, excerpt: match.excerpt }]
+        ? [{ resource, excerpt: match.excerpt, workspaceName: match.workspaceName }]
         : [];
     });
-  }, [baseResources, currentSearch, resources]);
+  }, [activeTag, activeView, currentSearch, resources, typeFilter]);
 
   const visibleResources = isSearching
     ? semanticMatches.map((match) => match.resource)
@@ -276,6 +317,7 @@ export function LibraryDashboard({
   ): Promise<ActionResult<Resource>> {
     const result = await createResourceAction(input);
     if (!result.success) return result;
+    setActiveWorkspaceId(input.workspaceId);
     setResources((current) => [result.data, ...current]);
     setCollections((current) =>
       Array.from(
@@ -291,12 +333,145 @@ export function LibraryDashboard({
     return result;
   }
 
+  async function createWorkspace(
+    name: string,
+  ): Promise<ActionResult<Workspace>> {
+    const result = await createWorkspaceAction(name);
+    if (result.success) {
+      setWorkspaces((current) => [...current, result.data]);
+      setActiveWorkspaceId(result.data.id);
+      setActiveView("All resources");
+      setActionError("");
+    }
+    return result;
+  }
+
+  async function createCollection(name: string): Promise<ActionResult<string>> {
+    const result = await createCollectionAction(name);
+    if (result.success) {
+      setCollections((current) =>
+        [...new Set([...current, result.data])].sort((left, right) =>
+          left.localeCompare(right),
+        ),
+      );
+      setActionError("");
+    }
+    return result;
+  }
+
+  async function renameCollection(
+    oldName: string,
+    name: string,
+  ): Promise<ActionResult<string>> {
+    const result = await renameCollectionAction(oldName, name);
+    if (result.success) {
+      setCollections((current) =>
+        current
+          .map((collection) => collection === oldName ? result.data : collection)
+          .sort((left, right) => left.localeCompare(right)),
+      );
+      setResources((current) =>
+        current.map((resource) => ({
+          ...resource,
+          collectionNames: resource.collectionNames.map((collection) =>
+            collection === oldName ? result.data : collection,
+          ),
+          collection: resource.collection === oldName ? result.data : resource.collection,
+        })),
+      );
+      setActiveView((view) => view === oldName ? result.data : view);
+    }
+    return result;
+  }
+
+  async function deleteCollection(name: string): Promise<ActionResult<string>> {
+    const result = await deleteCollectionAction(name);
+    if (result.success) {
+      setCollections((current) => current.filter((collection) => collection !== name));
+      setResources((current) =>
+        current.map((resource) => {
+          const remainingCollections = resource.collectionNames.filter(
+            (collection) => collection !== name,
+          );
+          return {
+            ...resource,
+            collectionNames: remainingCollections,
+            collection: remainingCollections[0] ?? "Unsorted",
+          };
+        }),
+      );
+      setActiveView((view) => view === name ? "All resources" : view);
+    }
+    return result;
+  }
+
+  async function renameWorkspace(
+    id: string,
+    name: string,
+  ): Promise<ActionResult<Workspace>> {
+    const result = await renameWorkspaceAction(id, name);
+    if (result.success) {
+      setWorkspaces((current) =>
+        current.map((workspace) =>
+          workspace.id === id ? result.data : workspace,
+        ),
+      );
+      setResources((current) =>
+        current.map((resource) =>
+          resource.workspaceId === id
+            ? { ...resource, workspaceName: result.data.name }
+            : resource,
+        ),
+      );
+    }
+    return result;
+  }
+
+  async function deleteWorkspace(
+    id: string,
+  ): Promise<ActionResult<null>> {
+    const result = await deleteWorkspaceAction(id);
+    if (result.success) {
+      const remaining = workspaces.filter((workspace) => workspace.id !== id);
+      setWorkspaces(remaining);
+      if (activeWorkspaceId === id) {
+        setActiveWorkspaceId(remaining[0]?.id ?? "");
+      }
+    }
+    return result;
+  }
+
+  async function moveResource(
+    id: string,
+    workspaceId: string,
+  ): Promise<ActionResult<null>> {
+    const result = await moveResourceToWorkspaceAction(id, workspaceId);
+    if (result.success) {
+      const workspace = workspaces.find((item) => item.id === workspaceId);
+      if (workspace) {
+        setResources((current) =>
+          current.map((resource) =>
+            resource.id === id
+              ? {
+                  ...resource,
+                  workspaceId,
+                  workspaceName: workspace.name,
+                }
+              : resource,
+          ),
+        );
+      }
+    }
+    return result;
+  }
+
   async function uploadFileResource(
     input: ResourceInput,
     file: File,
   ): Promise<ActionResult<Resource>> {
     const result = await uploadResourceFileAction(input, file);
     if (!result.success) return result;
+    setActiveWorkspaceId(input.workspaceId);
     setResources((current) => [result.data, ...current]);
     setCollections((current) =>
       Array.from(new Set([...current, ...result.data.collectionNames])),
@@ -337,8 +512,13 @@ export function LibraryDashboard({
     return result;
   }
 
+  const activeWorkspace = workspaces.find(
+    (workspace) => workspace.id === activeWorkspaceId,
+  );
   const heading =
-    activeView === "All resources" ? "Your library" : activeView;
+    activeView === "All resources"
+      ? activeWorkspace?.name ?? "Your library"
+      : activeView;
   const resultLabel = `${visibleResources.length} ${visibleResources.length === 1 ? "resource" : "resources"}`;
 
   return (
@@ -346,7 +526,9 @@ export function LibraryDashboard({
       <Sidebar
         activeView={activeView}
         collections={collections}
-        resources={resources}
+        resources={workspaceResources}
+        workspaces={workspaces}
+        activeWorkspaceId={activeWorkspaceId}
         userEmail={userEmail}
         userDisplayName={userDisplayName}
         userId={userId}
@@ -355,6 +537,17 @@ export function LibraryDashboard({
           setActiveView(view);
           setMobileNavOpen(false);
         }}
+        onSelectWorkspace={(workspaceId) => {
+          setActiveWorkspaceId(workspaceId);
+          setActiveView("All resources");
+          setMobileNavOpen(false);
+        }}
+        onCreateWorkspace={createWorkspace}
+        onRenameWorkspace={renameWorkspace}
+        onDeleteWorkspace={deleteWorkspace}
+        onCreateCollection={createCollection}
+        onRenameCollection={renameCollection}
+        onDeleteCollection={deleteCollection}
         onSearch={focusSearch}
         onToggleMobile={() => setMobileNavOpen((open) => !open)}
       />
@@ -364,7 +557,7 @@ export function LibraryDashboard({
           userEmail={userEmail}
           userDisplayName={userDisplayName}
           userId={userId}
-          addDisabled={Boolean(initialError)}
+          addDisabled={Boolean(initialError) || workspaces.length === 0}
           query={query}
           onQueryChange={setQuery}
           onAddResource={() => setAddDialogOpen(true)}
@@ -413,7 +606,7 @@ export function LibraryDashboard({
                 <div className="heading-copy">
                   <p className="eyebrow">
                     {activeView === "All resources"
-                      ? "YOUR PERSONAL LIBRARY"
+                      ? "WORKSPACE LIBRARY"
                       : "COLLECTION"}
                   </p>
                   <div className="title-row">
@@ -422,13 +615,13 @@ export function LibraryDashboard({
                   </div>
                   <p className="heading-description">
                     {isSearching
-                      ? "Searching indexed notes and code in your library."
+                      ? "Searching across all your workspaces."
                       : "A home for the things worth finding again."}
                   </p>
                 </div>
                 <div className="library-summary" aria-label="Library summary">
                   <span>
-                    <strong>{resources.length}</strong> saved
+                    <strong>{workspaceResources.length}</strong> saved
                   </span>
                   <span className="meta-dot">·</span>
                   <span>
@@ -547,7 +740,8 @@ export function LibraryDashboard({
               </div>
               <footer className="library-footer">
                 <span>
-                  Showing {visibleResources.length} of {resources.length}{" "}
+                  Showing {visibleResources.length} of{" "}
+                  {isSearching ? resources.length : workspaceResources.length}{" "}
                   resources
                 </span>
                 <span>Saved to your account</span>
@@ -560,6 +754,8 @@ export function LibraryDashboard({
       {addDialogOpen && (
         <AddResourceDialog
           collections={collections}
+          workspaces={workspaces}
+          initialWorkspaceId={activeWorkspaceId}
           maxUploadSizeBytes={maxUploadSizeBytes}
           onClose={() => setAddDialogOpen(false)}
           onSave={addResource}
@@ -570,10 +766,12 @@ export function LibraryDashboard({
         <ResourceDetailPanel
           resource={selectedResource}
           collections={collections}
+          workspaces={workspaces}
           onClose={() => setSelectedId(null)}
           onFavorite={toggleFavorite}
           onUpdate={updateResource}
           onDelete={deleteResource}
+          onMove={moveResource}
           onTagSelect={(tag) => {
             setActiveTag(tag);
             setSelectedId(null);

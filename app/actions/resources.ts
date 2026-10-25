@@ -18,10 +18,17 @@ import {
   createResourceFileLinks,
   uploadResourceFile,
 } from "@/services/storageService";
+import {
+  createWorkspace as createWorkspaceRecord,
+  deleteWorkspace as deleteWorkspaceRecord,
+  moveResource as moveResourceRecord,
+  renameWorkspace as renameWorkspaceRecord,
+} from "@/services/workspaceService";
 import type {
   ActionResult,
   Resource,
   ResourceFileLinks,
+  Workspace,
 } from "@/types/resource";
 
 export async function createResourceAction(
@@ -45,6 +52,174 @@ export async function createResourceAction(
       warning = `Resource saved, but search indexing failed: ${getIndexingErrorMessage(error)} You can retry indexing from search.`;
     }
     return { success: true, data: resource, warning };
+  } catch (error) {
+    return { success: false, error: getErrorMessage(error) };
+  }
+}
+
+export async function createWorkspaceAction(
+  value: unknown,
+): Promise<ActionResult<Workspace>> {
+  const name = validateWorkspaceName(value);
+  if (!name) return { success: false, error: "Enter a workspace name (1–100 characters)." };
+  try {
+    const { supabase, user } = await getAuthenticatedSupabaseClient(false);
+    const workspace = await createWorkspaceRecord(supabase, user.id, name);
+    revalidatePath("/library");
+    return { success: true, data: workspace };
+  } catch (error) {
+    return { success: false, error: getErrorMessage(error) };
+  }
+}
+
+export async function renameWorkspaceAction(
+  workspaceId: unknown,
+  value: unknown,
+): Promise<ActionResult<Workspace>> {
+  if (typeof workspaceId !== "string" || !isUuid(workspaceId)) {
+    return { success: false, error: "Choose a valid workspace." };
+  }
+  const name = validateWorkspaceName(value);
+  if (!name) return { success: false, error: "Enter a workspace name (1–100 characters)." };
+  try {
+    const { supabase, user } = await getAuthenticatedSupabaseClient(false);
+    const workspace = await renameWorkspaceRecord(
+      supabase,
+      user.id,
+      workspaceId,
+      name,
+    );
+    revalidatePath("/library");
+    return { success: true, data: workspace };
+  } catch (error) {
+    return { success: false, error: getErrorMessage(error) };
+  }
+}
+
+export async function deleteWorkspaceAction(
+  workspaceId: unknown,
+): Promise<ActionResult<null>> {
+  if (typeof workspaceId !== "string" || !isUuid(workspaceId)) {
+    return { success: false, error: "Choose a valid workspace." };
+  }
+  try {
+    const { supabase, user } = await getAuthenticatedSupabaseClient(false);
+    await deleteWorkspaceRecord(supabase, user.id, workspaceId);
+    revalidatePath("/library");
+    return { success: true, data: null };
+  } catch (error) {
+    return { success: false, error: getErrorMessage(error) };
+  }
+}
+
+export async function moveResourceToWorkspaceAction(
+  resourceId: unknown,
+  workspaceId: unknown,
+): Promise<ActionResult<null>> {
+  if (
+    typeof resourceId !== "string" ||
+    !isUuid(resourceId) ||
+    typeof workspaceId !== "string" ||
+    !isUuid(workspaceId)
+  ) {
+    return { success: false, error: "Choose a valid resource and workspace." };
+  }
+  try {
+    const { supabase } = await getAuthenticatedSupabaseClient(false);
+    await moveResourceRecord(supabase, resourceId, workspaceId);
+    revalidatePath("/library");
+    return { success: true, data: null };
+  } catch (error) {
+    return { success: false, error: getErrorMessage(error) };
+  }
+}
+
+export async function createCollectionAction(
+  value: unknown,
+): Promise<ActionResult<string>> {
+  const name = typeof value === "string" ? value.trim() : "";
+  if (!name || name.length > 100) {
+    return {
+      success: false,
+      error: "Enter a collection name between 1 and 100 characters.",
+    };
+  }
+
+  try {
+    const { supabase, user } = await getAuthenticatedSupabaseClient(false);
+    const { data, error } = await supabase
+      .from("collections")
+      .insert({ user_id: user.id, name })
+      .select("name")
+      .single();
+    if (error) {
+      if (error.code === "23505") {
+        return { success: false, error: "A collection with that name already exists." };
+      }
+      throw new Error(`Unable to create collection: ${error.message}`);
+    }
+    revalidatePath("/library");
+    return { success: true, data: data.name };
+  } catch (error) {
+    return { success: false, error: getErrorMessage(error) };
+  }
+}
+
+export async function renameCollectionAction(
+  currentName: unknown,
+  value: unknown,
+): Promise<ActionResult<string>> {
+  const oldName = typeof currentName === "string" ? currentName.trim() : "";
+  const name = typeof value === "string" ? value.trim() : "";
+  if (!oldName || !name || name.length > 100) {
+    return {
+      success: false,
+      error: "Enter a collection name between 1 and 100 characters.",
+    };
+  }
+
+  try {
+    const { supabase, user } = await getAuthenticatedSupabaseClient(false);
+    const { data, error } = await supabase
+      .from("collections")
+      .update({ name })
+      .eq("user_id", user.id)
+      .eq("name", oldName)
+      .select("name")
+      .maybeSingle();
+    if (error) {
+      if (error.code === "23505") {
+        return { success: false, error: "A collection with that name already exists." };
+      }
+      throw new Error(`Unable to rename collection: ${error.message}`);
+    }
+    if (!data) return { success: false, error: "Collection not found or access denied." };
+    revalidatePath("/library");
+    return { success: true, data: data.name };
+  } catch (error) {
+    return { success: false, error: getErrorMessage(error) };
+  }
+}
+
+export async function deleteCollectionAction(
+  value: unknown,
+): Promise<ActionResult<string>> {
+  const name = typeof value === "string" ? value.trim() : "";
+  if (!name) return { success: false, error: "Choose a valid collection." };
+
+  try {
+    const { supabase, user } = await getAuthenticatedSupabaseClient(false);
+    const { data, error } = await supabase
+      .from("collections")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("name", name)
+      .select("name")
+      .maybeSingle();
+    if (error) throw new Error(`Unable to delete collection: ${error.message}`);
+    if (!data) return { success: false, error: "Collection not found or access denied." };
+    revalidatePath("/library");
+    return { success: true, data: data.name };
   } catch (error) {
     return { success: false, error: getErrorMessage(error) };
   }
@@ -192,4 +367,10 @@ function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     value,
   );
+}
+
+function validateWorkspaceName(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const name = value.trim();
+  return name.length >= 1 && name.length <= 100 ? name : null;
 }

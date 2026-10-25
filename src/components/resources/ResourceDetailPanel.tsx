@@ -22,11 +22,13 @@ import type {
   Resource,
   ResourceInput,
   ResourceType,
+  Workspace,
 } from "@/types/resource";
 
 type ResourceDetailPanelProps = {
   resource: Resource;
   collections: readonly string[];
+  workspaces: readonly Workspace[];
   onClose: () => void;
   onFavorite: (id: string, favorite: boolean) => Promise<ActionResult<null>>;
   onUpdate: (
@@ -34,6 +36,10 @@ type ResourceDetailPanelProps = {
     input: ResourceInput,
   ) => Promise<ActionResult<Resource>>;
   onDelete: (id: string) => Promise<ActionResult<null>>;
+  onMove: (
+    id: string,
+    workspaceId: string,
+  ) => Promise<ActionResult<null>>;
   onTagSelect: (tag: string) => void;
 };
 
@@ -56,10 +62,12 @@ const typeStyles: Record<ResourceType, string> = {
 export function ResourceDetailPanel({
   resource,
   collections,
+  workspaces,
   onClose,
   onFavorite,
   onUpdate,
   onDelete,
+  onMove,
   onTagSelect,
 }: ResourceDetailPanelProps) {
   const [editing, setEditing] = useState(false);
@@ -77,6 +85,7 @@ export function ResourceDetailPanel({
     const input: ResourceInput = {
       title: String(form.get("title") ?? "").trim(),
       type: resource.type,
+      workspaceId: resource.workspaceId,
       collectionNames: collectionSelect
         ? Array.from(collectionSelect.selectedOptions, (option) => option.value)
         : resource.collectionNames,
@@ -113,6 +122,18 @@ export function ResourceDetailPanel({
     setError("");
     startTransition(async () => {
       const result = await onDelete(resource.id);
+      if (!result.success) setError(result.error);
+    });
+  }
+
+  function handleMove(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const workspaceId = String(form.get("workspace") ?? "");
+    if (workspaceId === resource.workspaceId) return;
+    setError("");
+    startTransition(async () => {
+      const result = await onMove(resource.id, workspaceId);
       if (!result.success) setError(result.error);
     });
   }
@@ -262,9 +283,28 @@ export function ResourceDetailPanel({
                 </span>
                 <span>
                   <Folder size={13} />
-                  {resource.collection}
+                  {resource.workspaceName}
                 </span>
               </div>
+              <form className="detail-workspace-move" onSubmit={handleMove}>
+                <label className="form-label">
+                  Move to workspace
+                  <select name="workspace" defaultValue={resource.workspaceId}>
+                    {workspaces.map((workspace) => (
+                      <option key={workspace.id} value={workspace.id}>
+                        {workspace.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  type="submit"
+                  className="cancel-button"
+                  disabled={isPending || workspaces.length < 2}
+                >
+                  Move
+                </button>
+              </form>
               {(resource.type === "PDF" || resource.type === "Image") && (
                 <>
                   <div className="detail-rule" />

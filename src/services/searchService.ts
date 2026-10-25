@@ -127,6 +127,8 @@ export async function searchResources(
     )
     .map((row) => ({
       resourceId: row.resource_id,
+      workspaceId: row.workspace_id,
+      workspaceName: row.workspace_name,
       title: row.title,
       type: row.resource_type,
       excerpt: row.matched_text,
@@ -148,6 +150,8 @@ function mapKeywordCandidates(
 ): SearchCandidateMatch[] {
   return rows.map((row) => ({
     resourceId: row.resource_id,
+    workspaceId: row.workspace_id,
+    workspaceName: row.workspace_name,
     title: row.title,
     type: row.resource_type,
     excerpt: row.matched_text,

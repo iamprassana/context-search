@@ -8,11 +8,14 @@ import type {
   ResourceCategory,
   ResourceInput,
   ResourceType,
+  Workspace,
 } from "@/types/resource";
 import { formatFileSize } from "@/lib/storage/config";
 
 type AddResourceDialogProps = {
   collections: readonly string[];
+  workspaces: readonly Workspace[];
+  initialWorkspaceId: string;
   maxUploadSizeBytes: number;
   onClose: () => void;
   onSave: (input: ResourceInput) => Promise<ActionResult<Resource>>;
@@ -31,6 +34,8 @@ const categories: { id: ResourceCategory; label: string }[] = [
 
 export function AddResourceDialog({
   collections,
+  workspaces,
+  initialWorkspaceId,
   maxUploadSizeBytes,
   onClose,
   onSave,
@@ -94,6 +99,7 @@ export function AddResourceDialog({
       const input: ResourceInput = {
         title,
         type,
+        workspaceId: String(form.get("workspace") ?? initialWorkspaceId),
         collectionNames:
           category === "URL" || category === "Note" || category === "Code"
             ? collectionNames
@@ -189,6 +195,10 @@ export function AddResourceDialog({
 
         {category === "URL" && (
           <>
+            <WorkspaceField
+              workspaces={workspaces}
+              initialWorkspaceId={initialWorkspaceId}
+            />
             <label className="form-label">
               URL
               <input
@@ -212,6 +222,10 @@ export function AddResourceDialog({
 
         {category === "Note" && (
           <>
+            <WorkspaceField
+              workspaces={workspaces}
+              initialWorkspaceId={initialWorkspaceId}
+            />
             <label className="form-label">
               Note
               <textarea
@@ -227,6 +241,10 @@ export function AddResourceDialog({
 
         {category === "Code" && (
           <>
+            <WorkspaceField
+              workspaces={workspaces}
+              initialWorkspaceId={initialWorkspaceId}
+            />
             <div className="form-row">
               <label className="form-label">
                 Language
@@ -262,6 +280,10 @@ export function AddResourceDialog({
 
         {category === "File" && (
           <>
+            <WorkspaceField
+              workspaces={workspaces}
+              initialWorkspaceId={initialWorkspaceId}
+            />
             <div className="form-label">
               File
               <button
@@ -345,6 +367,27 @@ function CollectionField({ collections }: { collections: readonly string[] }) {
         {collections.map((collection) => (
           <option key={collection} value={collection}>
             {collection}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function WorkspaceField({
+  workspaces,
+  initialWorkspaceId,
+}: {
+  workspaces: readonly Workspace[];
+  initialWorkspaceId: string;
+}) {
+  return (
+    <label className="form-label">
+      Workspace
+      <select name="workspace" defaultValue={initialWorkspaceId} required>
+        {workspaces.map((workspace) => (
+          <option key={workspace.id} value={workspace.id}>
+            {workspace.name}
           </option>
         ))}
       </select>
