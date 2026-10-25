@@ -9,8 +9,8 @@ import {
   type RankedSearchCandidate,
   type SearchCandidateMatch,
 } from "@/lib/search/rankResults";
-import type { Database } from "@/types/database";
-import type { SemanticSearchMatch } from "@/types/search";
+import type { Database } from "@/types/database.types";
+import type { SemanticSearchMatch } from "@/types/search.types";
 
 const MAX_RESULTS = 20;
 

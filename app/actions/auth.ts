@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import type { AuthFormState } from "@/types/auth";
+import type { AuthFormState } from "@/types/auth.types";
 
 export async function signInAction(
   _previousState: AuthFormState,

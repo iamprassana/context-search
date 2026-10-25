@@ -2,7 +2,7 @@
 
 import { ChevronDown, Plus, Search } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { signOutAction } from "../../../app/actions/auth";
+import { signOutAction } from "@/api/auth.api";
 import { UserAvatar } from "@/components/layout/UserAvatar";
 
 type LibraryHeaderProps = {

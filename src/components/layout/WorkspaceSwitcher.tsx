@@ -2,7 +2,8 @@
 
 import { Check, ChevronDown, Plus, Settings2, Trash2 } from "lucide-react";
 import { useState, useTransition, type FormEvent } from "react";
-import type { ActionResult, Workspace } from "@/types/resource";
+import type { ActionResult } from "@/types/api.types";
+import type { Workspace } from "@/types/workspace.types";
 
 type WorkspaceSwitcherProps = {
   workspaces: readonly Workspace[];

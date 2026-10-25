@@ -11,7 +11,7 @@ import {
   Link2,
   Star,
 } from "lucide-react";
-import type { Resource } from "@/types/resource";
+import type { Resource } from "@/types/resource.types";
 
 type ResourceCardProps = {
   resource: Resource;

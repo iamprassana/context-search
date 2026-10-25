@@ -19,11 +19,11 @@ import { useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { UserAvatar } from "@/components/layout/UserAvatar";
 import { WorkspaceSwitcher } from "@/components/layout/WorkspaceSwitcher";
 import type {
-  ActionResult,
   LibraryView,
   Resource,
-  Workspace,
-} from "@/types/resource";
+} from "@/types/resource.types";
+import type { ActionResult } from "@/types/api.types";
+import type { Workspace } from "@/types/workspace.types";
 
 type SidebarProps = {
   activeView: LibraryView | string;

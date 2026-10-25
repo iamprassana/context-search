@@ -1,14 +1,11 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/database";
+import type { Database } from "@/types/database.types";
 import { STORAGE_BUCKET } from "@/lib/storage/config";
 import { verifyUploadedFile } from "@/lib/storage/validate-file";
-import type {
-  Resource,
-  ResourceFileLinks,
-  ResourceInput,
-} from "@/types/resource";
+import type { Resource, ResourceInput } from "@/types/resource.types";
+import type { ResourceFileLinks } from "@/types/file.types";
 import {
   createResourceRecordId,
   listResources,

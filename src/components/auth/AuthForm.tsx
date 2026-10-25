@@ -3,8 +3,8 @@
 import { ArrowLeft, Bookmark, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { signInAction, signUpAction } from "../../../app/actions/auth";
-import type { AuthFormState } from "@/types/auth";
+import { signInAction, signUpAction } from "@/api/auth.api";
+import type { AuthFormState } from "@/types/auth.types";
 
 type AuthMode = "login" | "signup";
 

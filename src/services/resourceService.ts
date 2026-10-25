@@ -1,14 +1,14 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/database";
+import type { Database } from "@/types/database.types";
 import { STORAGE_BUCKET } from "@/lib/storage/config";
 import type {
   Resource,
   ResourceInput,
   ResourceLibraryData,
   ResourceType,
-} from "@/types/resource";
+} from "@/types/resource.types";
 
 type ResourceRow = Database["public"]["Tables"]["resources"]["Row"];
 type ResourceFileRow = Database["public"]["Tables"]["resource_files"]["Row"];

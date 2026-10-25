@@ -18,12 +18,12 @@ import {
 import { FormEvent, useState, useTransition } from "react";
 import { ResourceFileAccess } from "@/components/resources/ResourceFileAccess";
 import type {
-  ActionResult,
   Resource,
   ResourceInput,
   ResourceType,
-  Workspace,
-} from "@/types/resource";
+} from "@/types/resource.types";
+import type { ActionResult } from "@/types/api.types";
+import type { Workspace } from "@/types/workspace.types";
 
 type ResourceDetailPanelProps = {
   resource: Resource;

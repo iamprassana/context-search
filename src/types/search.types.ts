@@ -1,4 +1,12 @@
-import type { Resource } from "@/types/resource";
+import type { Resource } from "@/types/resource.types";
+
+export type IndexBatchReport = {
+  indexed: number;
+  skipped: number;
+  failed: number;
+  failures: Array<{ title: string; message: string }>;
+  nextCursor: string | null;
+};
 
 export type SemanticSearchMatch = {
   resourceId: string;

@@ -3,13 +3,13 @@
 import { FileUp, Link2, Code2, FileText, X } from "lucide-react";
 import { FormEvent, useRef, useState, useTransition } from "react";
 import type {
-  ActionResult,
   Resource,
   ResourceCategory,
   ResourceInput,
   ResourceType,
-  Workspace,
-} from "@/types/resource";
+} from "@/types/resource.types";
+import type { ActionResult } from "@/types/api.types";
+import type { Workspace } from "@/types/workspace.types";
 import { formatFileSize } from "@/lib/storage/config";
 
 type AddResourceDialogProps = {

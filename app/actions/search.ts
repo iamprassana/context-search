@@ -3,9 +3,8 @@
 import { getAuthenticatedSupabaseClient } from "@/lib/supabase/authenticated";
 import { indexResourceBatch } from "@/services/indexingService";
 import { searchResources } from "@/services/searchService";
-import type { ActionResult } from "@/types/resource";
-import type { IndexBatchReport } from "@/services/indexingService";
-import type { SemanticSearchMatch } from "@/types/search";
+import type { ActionResult } from "@/types/api.types";
+import type { IndexBatchReport, SemanticSearchMatch } from "@/types/search.types";
 
 export async function searchResourcesAction(
   value: unknown,

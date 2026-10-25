@@ -12,7 +12,8 @@ import { STORAGE_BUCKET } from "@/lib/storage/config";
 import { chunkText } from "@/lib/search/chunkText";
 import { chunkCode } from "@/lib/search/chunkCode";
 import { fetchReadableWebpageText } from "@/lib/webpage/fetch-readable-text";
-import type { Database } from "@/types/database";
+import type { Database } from "@/types/database.types";
+import type { IndexBatchReport } from "@/types/search.types";
 
 const RESOURCE_BATCH_SIZE = 5;
 
@@ -50,14 +51,6 @@ export class IndexingPipelineError extends Error {
     this.name = "IndexingPipelineError";
   }
 }
-
-export type IndexBatchReport = {
-  indexed: number;
-  skipped: number;
-  failed: number;
-  failures: Array<{ title: string; message: string }>;
-  nextCursor: string | null;
-};
 
 export async function indexResource(
   supabase: SupabaseClient<Database>,

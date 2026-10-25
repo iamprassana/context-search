@@ -1,4 +1,4 @@
-import type { ResourceInput, ResourceType } from "@/types/resource";
+import type { ResourceInput, ResourceType } from "@/types/resource.types";
 
 const resourceTypes = new Set<ResourceType>([
   "Link",

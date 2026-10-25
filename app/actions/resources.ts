@@ -12,7 +12,7 @@ import {
   IndexingPipelineError,
   indexResource,
 } from "@/services/indexingService";
-import { validateResourceInput } from "@/lib/validation/resource";
+import { validateResourceInput } from "@/types/schemas/resource.schema";
 import { getMaxUploadSizeBytes } from "@/lib/storage/config";
 import {
   createResourceFileLinks,
@@ -25,11 +25,11 @@ import {
   renameWorkspace as renameWorkspaceRecord,
 } from "@/services/workspaceService";
 import type {
-  ActionResult,
   Resource,
-  ResourceFileLinks,
-  Workspace,
-} from "@/types/resource";
+} from "@/types/resource.types";
+import type { ActionResult } from "@/types/api.types";
+import type { ResourceFileLinks } from "@/types/file.types";
+import type { Workspace } from "@/types/workspace.types";
 
 export async function createResourceAction(
   value: unknown,

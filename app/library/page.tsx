@@ -4,7 +4,7 @@ import { getAuthenticatedSupabaseClient } from "@/lib/supabase/authenticated";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getMaxUploadSizeBytes } from "@/lib/storage/config";
 import { listResources } from "@/services/resourceService";
-import type { ResourceLibraryData } from "@/types/resource";
+import type { ResourceLibraryData } from "@/types/resource.types";
 
 export const instant = false;
 

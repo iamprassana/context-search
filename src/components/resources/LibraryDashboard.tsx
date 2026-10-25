@@ -2,22 +2,26 @@
 
 import {
   createResourceAction,
-  uploadResourceFileAction,
   deleteResourceAction,
   setFavoriteAction,
   updateResourceAction,
+} from "@/api/resources.api";
+import {
   createWorkspaceAction,
-  createCollectionAction,
-  deleteCollectionAction,
   deleteWorkspaceAction,
   moveResourceToWorkspaceAction,
   renameWorkspaceAction,
+} from "@/api/workspaces.api";
+import {
+  createCollectionAction,
+  deleteCollectionAction,
   renameCollectionAction,
-} from "../../../app/actions/resources";
+} from "@/api/collections.api";
+import { uploadResourceFileAction } from "@/api/files.api";
 import {
   indexResourcesBatchAction,
   searchResourcesAction,
-} from "../../../app/actions/search";
+} from "@/api/search.api";
 import {
   ArrowDownWideNarrow,
   ChevronDown,
@@ -37,16 +41,16 @@ import { SearchResults } from "@/components/search/SearchResults";
 import type {
   SemanticResourceMatch,
   SemanticSearchMatch,
-} from "@/types/search";
+} from "@/types/search.types";
 import type {
-  ActionResult,
   LibraryView,
   Resource,
   ResourceFilter,
   ResourceInput,
   ResourceLayout,
-  Workspace,
-} from "@/types/resource";
+} from "@/types/resource.types";
+import type { ActionResult } from "@/types/api.types";
+import type { Workspace } from "@/types/workspace.types";
 import { useRouter } from "next/navigation";
 
 export function LibraryDashboard({

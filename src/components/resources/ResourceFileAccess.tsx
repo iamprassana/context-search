@@ -2,9 +2,10 @@
 
 import { Download, Eye } from "lucide-react";
 import { useState, useTransition } from "react";
-import { createResourceFileLinksAction } from "../../../app/actions/resources";
+import { createResourceFileLinksAction } from "@/api/files.api";
 import { formatFileSize } from "@/lib/storage/config";
-import type { ResourceFileLinks, ResourceType } from "@/types/resource";
+import type { ResourceType } from "@/types/resource.types";
+import type { ResourceFileLinks } from "@/types/file.types";
 
 type ResourceFileAccessProps = {
   resourceId: string;

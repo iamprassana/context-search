@@ -1,11 +1,8 @@
+import type { Workspace } from "@/types/workspace.types";
+
 export const RESOURCE_TYPES = ["Link", "Note", "Code", "Image", "PDF"] as const;
 
 export type ResourceType = (typeof RESOURCE_TYPES)[number];
-export type Workspace = {
-  id: string;
-  name: string;
-  description: string;
-};
 export type ResourceCategory = "URL" | "Note" | "Code" | "File";
 export type LibraryView =
   | "All resources"
@@ -58,12 +55,3 @@ export type ResourceLibraryData = {
   collections: string[];
   workspaces: Workspace[];
 };
-
-export type ResourceFileLinks = {
-  previewUrl: string;
-  downloadUrl: string;
-};
-
-export type ActionResult<T> =
-  | { success: true; data: T; warning?: string }
-  | { success: false; error: string };

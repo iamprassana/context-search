@@ -1,8 +1,8 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/database";
-import type { Workspace } from "@/types/resource";
+import type { Database } from "@/types/database.types";
+import type { Workspace } from "@/types/workspace.types";
 
 type WorkspaceRow = Pick<
   Database["public"]["Tables"]["workspaces"]["Row"],

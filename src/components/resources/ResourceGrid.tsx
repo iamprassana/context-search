@@ -1,7 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
-import type { Resource, ResourceLayout } from "@/types/resource";
+import type { Resource, ResourceLayout } from "@/types/resource.types";
 import { ResourceCard } from "@/components/resources/ResourceCard";
 
 type ResourceGridProps = {

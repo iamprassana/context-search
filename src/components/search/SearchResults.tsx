@@ -1,7 +1,7 @@
 "use client";
 
-import type { Resource, ResourceLayout } from "@/types/resource";
-import type { SemanticResourceMatch } from "@/types/search";
+import type { Resource, ResourceLayout } from "@/types/resource.types";
+import type { SemanticResourceMatch } from "@/types/search.types";
 import { ResourceCard } from "@/components/resources/ResourceCard";
 
 type SearchResultsProps = {
