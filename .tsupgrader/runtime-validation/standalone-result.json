@@ -1,0 +1,118 @@
+{
+  "planHash": "cf88e2aa1268c7c2833f18187860a342e555d7e6b60e7cfeb6a2fc1865edf423",
+  "phase": "standalone",
+  "recordedAtUtc": "2026-10-25T11:12:56.9377891Z",
+  "retryCount": 0,
+  "resetBaseline": false,
+  "complete": true,
+  "result": {
+    "setupSucceeded": true,
+    "setupDurationMs": 0,
+    "setupFailureOutput": null,
+    "assertions": [
+      {
+        "name": "lint",
+        "kind": "process",
+        "verificationMethod": "exit-code",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": 0,
+        "outputSample": "$ eslint\r\n",
+        "durationMs": 8839
+      },
+      {
+        "name": "typescript-no-emit",
+        "kind": "process",
+        "verificationMethod": "exit-code",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": 0,
+        "outputSample": "",
+        "durationMs": 3321
+      },
+      {
+        "name": "production-build",
+        "kind": "process",
+        "verificationMethod": "exit-code",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": 0,
+        "outputSample": "$ next build\r\n\u25B2 Next.js 16.4.3 (Turbopack)\r\n- Environments: .env\r\n\u2713 Running next.config.ts took 87ms\r\n- Cache Components enabled\r\n- Partial Prefetching enabled\r\n- Experiments (use with caution):\r\n  \u2713 agentFeedback\r\n  \u00B7 serverActions\r\n\r\n  Creating an optimized production build ...\r\n\u2713 Compiled successfully in 1583ms\r\n  Running TypeScript ...\r\n  Finished TypeScript in 3.3s ...\r\n  Collecting page data using 8 workers ...\r\n  Generating static pages using 8 workers (0/7) ...\r\n  Generating static pages using 8 workers (1/7) \r\n  Generating static pages using 8 workers (3/7) \r\n  Generating static pages using 8 workers (5/7) \r\n\u2713 Generating static pages using 8 workers (7/7) in 1712ms\r\n  Finalizing page optimization ...\r\n\r\nRoute (app)\r\n\u250C \u25CB /\r\n\u251C \u25CB /_not-found\r\n\u251C \u25D0 /library\r\n\u251C \u0192 /login\r\n\u2514 \u0192 /signup\r\n\r\n\r\n\u0192 Proxy (Middleware)\r\n\r\n\u25CB  (Static)             prerendered as static content\r\n\u25D0  (Partial Prerender)  prerendered as static HTML with dynamic server-streamed content\r\n\u0192  (Dynamic)            server-rendered on demand\r\n\r\n",
+        "durationMs": 10593
+      },
+      {
+        "name": "home-route-serves",
+        "kind": "http-probe",
+        "verificationMethod": "http-status",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": null,
+        "outputSample": "HTTP 200\n\u003C!DOCTYPE html\u003E\u003Chtml lang=\u0022en\u0022 class=\u0022geist_a71539c9-module__T19VSG__variable geist_mono_8d43a2aa-module__8Li5zG__variable h-full antialiased\u0022\u003E\u003Chead\u003E\u003Cmeta charSet=\u0022utf-8\u0022/\u003E\u003Cmeta name=\u0022viewport\u0022 content=\u0022width=device-width, initial-scale=1\u0022/\u003E\u003Clink rel=\u0022stylesheet\u0022 href=\u0022/_next/static/chunks/%5Broot-of-the-server%5D__0-r0qkq01qvd9._.css\u0022 data-precedence=\u0022next_static/chunks/[root-of-the-server]__0-r0qkq01qvd9._.css\u0022/\u003E\u003Clink rel=\u0022preload\u0022 as=\u0022script\u0022 fetchPriority=\u0022low\u0022 href=\u0022/_next/static/chunks/%5Bturbopack%5D_browser_dev_hmr-client_hmr-client_ts_03l4kld1mrwfx._.js\u0022/\u003E\u003Cscript src=\u0022/_next/static/chunks/node_modules_next_dist_compiled_next-devtools_index_090k2jmam7qwg.js\u0022 async=\u0022\u0022\u003E\u003C/script\u003E\u003Cscript src=\u0022/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js\u0022 async=\u0022\u0022\u003E\u003C/script\u003E\u003Cscript src=\u0022/_next/static/chunks/1q96_modules_next_dist_compiled_react-dom_cjs_react-dom_development_1sqry0_53krp4.js\u0022 async=\u0022\u0022\u003E\u003C/script\u003E\u003Cscript src=\u0022/_next/static/chunks/node_modules_next_dist_compiled_react-dom_0grqycjrj6mju._.js\u0022 async=\u0022\u0022\u003E\u003C/script\u003E\u003Cscript src=\u0022/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_164kp-67asdr9._.js\u0022 async=\u0022\u0022\u003E\u003C/script\u003E\u003Cscript src=\u0022/_next/static/chunks/node_modules_next_dist_compiled_1amofcmz--cdp._.js\u0022 async=\u0022\u0022\u003E\u003C/script\u003E\u003Cscript src=\u0022/_next/static/chunks/node_modules_next_dist_client_14zvornz047l2._.js\u0022 async=\u0022\u0022\u003E\u003C/script\u003E\u003Cscript src=\u0022/_next/static/chunks/node_modules_next_dist_1bjkg68unqmjx._.js\u0022 async=\u0022\u0022\u003E\u003C/script\u003E\u003Cscript src=\u0022/_next/static/chunks/node_modules_%40swc_helpers_cjs_1r9vbqwj2323d._.js\u0022 async=\u0022\u0022\u003E\u003C/script\u003E\u003Cscript src=\u0022/_next/static/chunks/_1anvha4rlo79g._.js\u0022 async=\u0022\u0022\u003E\u003C/script\u003E\u003Cscript src=\u0022/_next/static/chunks/turbopack-_00pkkjbg3g3xr._.js\u0022 async=\u0022\u0022\u003E\u003C/script\u003E\u003Cscript src=\u0022/_next/static/chunks/_219uq1sj0q91c._.js\u0022 async=\u0022\u0022\u003E\u003C/script\u003E\u003Cscript src=\u0022/_next/static/chunks/node_modules_next_dist_20wefz_f1k6jn._.js\u0022 async=\u0022\u0022\u003E\u003C/script\u003E\u003Cscript src=\u0022/_next/static/chunks/node_modules_0fqun53z41zq-._.js\u0022 async=\u0022\u0022\u003E\u003C/script\u003E\u003Ctitle\u003EContextKeep \u2014 your personal library\u003C/title\u003E\u003Cmeta name=\u0022description\u0022 content=\u0022A thoughtful home for the things worth finding again.\u0022/\u003E\u003Clink rel=\u0022icon\u0022 href=\u0022/favicon.ico?favicon.117ezoe8m31dk.ico\u0022 sizes=\u002248x48\u0022 type=\u0022image/x-icon\u0022/\u003E\u003Cmeta name=\u0022next-size-adjust\u0022 content=\u0022\u0022/\u003E\u003Cscript src=\u0022/_next/static/chunks/node_modules_next_dist_build_polyfills_polyfill-nomodule.js\u0022 noModule=\u0022\u0022\u003E\u003C/script\u003E\u003C/head\u003E\u003Cbody class=\u0022min-h-full flex flex-col\u0022\u003E\u003Cdiv hidden=\u0022\u0022\u003E\u003C!--$--\u003E\u003C!--/$--\u003E\u003C/div\u003E\u003C!--\u0026--\u003E\u003Cmain class=\u0022welcome-page\u0022\u003E\u003Cheader class=\u0022welcome-header\u0022\u003E\u003Ca class=\u0022auth-brand\u0022 aria-label=\u0022ContextKeep home\u0022 href=\u0022/\u0022\u003E\u003Cspan class=\u0022brand-mark\u0022\u003E\u003Csvg xmlns=\u0022http://www.w3.org/2000/svg\u0022 width=\u002217\u0022 height=\u002217\u0022 viewBox=\u00220 0 24 24\u0022 fill=\u0022none\u0022 stroke=\u0022currentColor\u0022 stroke-width=\u00222.4\u0022 stroke-linecap=\u0022round\u0022 stroke-linejoin=\u0022round\u0022 class=\u0022lucide lucide-bookmark\u0022 aria-hidden=\u0022true\u0022\u003E\u003Cpath d=\u0022M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z\u0022\u003E\u003C/path\u003E\u003C/svg\u003E\u003C/span\u003E\u003Cspan class=\u0022brand-name\u0022\u003Econtext\u003Cspan\u003Ekeep\u003C/span\u003E\u003C/span\u003E\u003C/a\u003E\u003Cnav class=\u0022welcome-nav\u0022 aria-label=\u0022Main navigation\u0022\u003E\u003Ca class=\u0022welcome-signin\u0022 href=\u0022/login\u0022\u003ESign in\u003C/a\u003E\u003Ca class=\u0022welcome-nav-cta\u0022 href=\u0022/library\u0022\u003EOpen your library\u003Csvg xmlns=\u0022http://www.w3.org/2000/svg\u0022 width=\u002214\u0022 height=\u002214\u0022 viewBox=\u00220 0 24 24\u0022 fill=\u0022none\u0022 stroke=\u0022currentColor\u0022 stroke-width=\u00222\u0022 stroke-linecap=\u0022round\u0022 stroke-linejoin=\u0022round\u0022 class=\u0022lucide lucide-arrow-right\u0022 aria-hidden=\u0022true\u0022\u003E\u003Cpath d=\u0022M5 12h14\u0022\u003E\u003C/path\u003E\u003Cpath d=\u0022m12 5 7 7-7 7\u0022\u003E\u003C/path\u003E\u003C/svg\u003E\u003C/a\u003E\u003C/nav\u003E\u003C/header\u003E\u003Csection class=\u0022welcome-hero\u0022\u003E\u003Cdiv class=\u0022welcome-copy\u0022\u003E\u003Cp class=\u0022eyebrow\u0022\u003EA PERSONAL LIBRARY FOR YOUR WORKING MEMORY\u003C/p\u003E\u003Ch1\u003EKeep the useful things.\u003Cbr/\u003E\u003Cspan\u003EFind them when it matters.\u003C/span\u003E\u003C/h1\u003E\u003Cp class=\u0022welcome-description\u0022\u003ESave the articles, snippets, notes, and documents you come across. Search in your own words and get back to what you were working on.\u003C/p\u003E\u003Cdiv class=\u0022welcome-actions\u0022\u003E\u003Ca class=\u0022add-button welcome-primary\u0022 href=\u0022/library\u0022\u003EOpen the library\u003Csvg xmlns=\u0022http://www.w3.org/2000/svg\u0022 w\n\u2026[truncated]",
+        "durationMs": 4778
+      }
+    ],
+    "executions": [
+      {
+        "source": "lint",
+        "resolvedExecutable": "C:\\Users\\karthick prassana\\.bun\\bin\\bun.EXE",
+        "args": [
+          "run",
+          "lint"
+        ],
+        "cwd": "D:\\Vcomply\\context-search",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      },
+      {
+        "source": "typescript-no-emit",
+        "resolvedExecutable": "C:\\Users\\karthick prassana\\.bun\\bin\\bunx.EXE",
+        "args": [
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "D:\\Vcomply\\context-search",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      },
+      {
+        "source": "production-build",
+        "resolvedExecutable": "C:\\Users\\karthick prassana\\.bun\\bin\\bun.EXE",
+        "args": [
+          "run",
+          "build"
+        ],
+        "cwd": "D:\\Vcomply\\context-search",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      },
+      {
+        "source": "home-route-serves",
+        "resolvedExecutable": "C:\\Users\\karthick prassana\\.bun\\bin\\bun.EXE",
+        "args": [
+          "run",
+          "dev",
+          "--",
+          "--hostname",
+          "127.0.0.1",
+          "--port",
+          "3100"
+        ],
+        "cwd": "D:\\Vcomply\\context-search",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      }
+    ]
+  }
+}

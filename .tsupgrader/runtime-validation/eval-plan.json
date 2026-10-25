@@ -1,0 +1,53 @@
+{
+  "generatedAt": "2026-10-27T00:00:00.000Z",
+  "generatedOnPlatform": "win32",
+  "projectType": "webapp",
+  "setup": [],
+  "assertions": [
+    {
+      "name": "lint",
+      "kind": "process",
+      "command": "bun",
+      "args": ["run", "lint"],
+      "verificationMethod": "exit-code",
+      "expected": "0",
+      "timeoutSeconds": 120
+    },
+    {
+      "name": "typescript-no-emit",
+      "kind": "process",
+      "command": "bunx",
+      "args": ["tsc", "--noEmit"],
+      "verificationMethod": "exit-code",
+      "expected": "0",
+      "timeoutSeconds": 120
+    },
+    {
+      "name": "production-build",
+      "kind": "process",
+      "command": "bun",
+      "args": ["run", "build"],
+      "verificationMethod": "exit-code",
+      "expected": "0",
+      "timeoutSeconds": 300
+    },
+    {
+      "name": "home-route-serves",
+      "kind": "http-probe",
+      "startCommand": "bun",
+      "startArgs": [
+        "run",
+        "dev",
+        "--",
+        "--hostname",
+        "127.0.0.1",
+        "--port",
+        "3100"
+      ],
+      "url": "http://127.0.0.1:3100/",
+      "verificationMethod": "http-status",
+      "expected": "200",
+      "timeoutSeconds": 120
+    }
+  ]
+}
